@@ -1,3 +1,5 @@
+# This uses pytesseract to rotate images
+
 from PIL import Image
 import pytesseract
 import os
