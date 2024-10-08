@@ -1,5 +1,5 @@
 '''
-Modified code from ls_test_2.py
+Modified GUI from ls_test_2.py
 '''
 
 import os
