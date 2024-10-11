@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 #Step 1: Load image
-img = Image.open()          #Define path for image 
+img = Image.open("C:/Users/liams/ArchScan_Capture_Project/color_image_detection/test_folder/ls/11000005.jpg")          #Define path for image 
 img_rgb = np.array(img)     #Convert to NumPy array for easy processing
 
 
