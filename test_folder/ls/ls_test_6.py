@@ -87,7 +87,7 @@ def process_tiff(file_path):
     img.close()
 
 def main():
-    base_folder = "D:/Crownsville/sample_data/WASTEWATER-SF-001/AAC-CV-1078"
+    base_folder = "D:/test_data"
     jpg_folder = os.path.join(base_folder, "JPG")
     tiff_folder = os.path.join(base_folder, "TIFF")
 
