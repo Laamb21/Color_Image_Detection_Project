@@ -14,6 +14,13 @@ external_drive_path = "D:/test_data/JPG"
 # Load the images
 image_paths = [os.path.join(external_drive_path, file) for file in os.listdir(external_drive_path) if file.endswith('.jpg')]
 
+# Print the file names of the images found in the external drive
+print("Image Files Found:")
+for path in image_paths:
+    print(os.path.basename(path))
+
+print("\n" + "-"*50 + "\n")
+
 gray_shades_count = []
 
 # Process each image to count unique shades of gray
