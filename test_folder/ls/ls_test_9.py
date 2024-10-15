@@ -1,6 +1,7 @@
 '''
 Test to determine threshold for choosing JPG or TIFF (grayscale vs. black and white)
 Refactored to eliminate output directories and only use input directories and a log file.
+Logs the full file name without extension in selection_log.csv.
 '''
 
 # Import libraries 
@@ -162,6 +163,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file):
         log_writer.writerow(['Document', 'Gray_Percentage', 'Selected_Format'])
 
         for jpg_file in tqdm(all_jpg_files, desc="Processing Documents"):
+            base_name, _ = os.path.splitext(jpg_file)  # Extract base name without extension
             last_four = extract_last_four_digits(jpg_file)
             if not last_four:
                 logging.warning(f"Could not extract last four digits from JPG '{jpg_file}'. Skipping.")
@@ -188,9 +190,9 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file):
             else:
                 selected_format = "JPG (Intermediate)"
 
-            # Log the decision
-            log_writer.writerow([last_four, f"{gray_pct:.2f}", selected_format])
-            logging.info(f"Document: {last_four}, Gray_Percentage: {gray_pct:.2f}, Selected_Format: {selected_format}")
+            # Log the decision with full base name
+            log_writer.writerow([base_name, f"{gray_pct:.2f}", selected_format])
+            logging.info(f"Document: {base_name}, Gray_Percentage: {gray_pct:.2f}, Selected_Format: {selected_format}")
 
     print(f"\nProcessing complete. Log saved to {log_file}")
     logging.info(f"Processing complete. Log saved to {log_file}")
