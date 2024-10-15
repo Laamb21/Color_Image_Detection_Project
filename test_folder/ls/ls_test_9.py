@@ -14,12 +14,12 @@ import logging
 
 # Configuration
 INPUT_DIR_JPG = "D:/test_data/JPG"      # Directory containing JPG files
-INPUT_DIR_TIFF = "D:/test_data/TIFF"    # Directory containing TIFF files
+INPUT_DIR_TIFF = "D:/test_data/TIF"    # Directory containing TIFF files
 LOG_FILE = 'selection_log.csv'          # CSV file to log decisions
 
 # Thresholds for gray percentage
-LOW_GRAY_THRESHOLD = 5      # Below this percentage, use TIFF
-HIGH_GRAY_THRESHOLD = 20    # Above this percentage, use JPG
+LOW_GRAY_THRESHOLD = 10      # Below this percentage, use TIFF
+HIGH_GRAY_THRESHOLD = 15    # Above this percentage, use JPG
 
 # Optional: Configure logging for detailed logs
 logging.basicConfig(
