@@ -13,8 +13,8 @@ import csv
 #Configuration
 INPUT_DIR_JPG = "D:/test_data/JPG"                              #Directory containing JPG files
 INPUT_DIR_TIFF = "D:/test_data/TIFF"                            #Directory containing TIFF files
-OUTPUT_DIR_JPG = "D:/test_data/tests/test_1/output_jpg"         #Directory to store selected JPG files
-OUTPUT_DIR_TIFF = "D:/test_data/tests/test_1/output_tiff"       #Directory to store selected TIFF files
+OUTPUT_DIR_JPG = "D:/test_data/tests/test_2/output_jpg"         #Directory to store selected JPG files
+OUTPUT_DIR_TIFF = "D:/test_data/tests/test_2/output_tiff"       #Directory to store selected TIFF files
 LOG_FILE = 'selection_log.csv'                                  #CSV file to log decisions
 
 #Thresholds for gray percentage
@@ -88,12 +88,21 @@ def build_tiff_mapping(input_dir_tiff):
     all_tiff_files = [f for f in os.listdir(input_dir_tiff)
                       if f.lower().endswith(('.tif', '.tiff')) and is_valid_tiff(f)]
     
+    print(f"Foung {len(all_tiff_files)} valid TIFF files")
+    
     for tiff in all_tiff_files:
         last_four = extract_last_four_digits(tiff)
         if last_four:
-            tiff_mapping[last_four] = tiff
+            if last_four in tiff_mapping:
+                tiff_mapping[last_four].append(tiff)
+                print(f"Appending to existing key: {last_four} -> {tiff}")
+            else:
+                tiff_mapping[last_four] = [tiff]
+                print(f"Mapping: {last_four} -> {tiff}")
         else:
             print(f"Warning: Could not extract last four digits from TIFF '{tiff}'. Skipping. ")
+
+    return tiff_mapping
 
 def process_documents(input_dir_jpg, input_dir_tiff, output_dir_jpg, output_dir_tiff, log_file):
     #Process all JPG and TIFF pairs in the input directories, and decide which format to use
@@ -133,15 +142,11 @@ def process_documents(input_dir_jpg, input_dir_tiff, output_dir_jpg, output_dir_
                 continue
 
             #Find corresponding TIFF
-            tiff_file = tiff_mapping(last_four)
-            if not tiff_file:
+            tiff_files = tiff_mapping.get(last_four)
+            if not tiff_files:
                 print(f"Warning: No corresponding TIFF found for JPG '{jpg_file}' with last four digits '{last_four}'. Skipping.")
 
             jpg_path = os.path.join(input_dir_jpg, jpg_file)
-            tiff_path = os.path.join(input_dir_tiff, tiff_file)
-
-            if not os.path.exists(tiff_path):
-                print(f"Warning: Corresponding TIFF not found for '{jpg_file}' as '{tiff_file}'. Skipping.")
 
             gray_pct = calculate_gray_percentage(jpg_path)
             if gray_pct is None:
@@ -151,12 +156,16 @@ def process_documents(input_dir_jpg, input_dir_tiff, output_dir_jpg, output_dir_
             #Decision logic
             if gray_pct < LOW_GRAY_THRESHOLD:
                 selected_format = "TIFF"
-                destination = os.path.join(output_dir_tiff, tiff_file)
-                try:
-                    shutil.copy2(tiff_path, destination)
-                except Exception as e:
-                    print(f"Error copying TIFF '{tiff_file}': {e}")
-                    selected_format = "TIFF (Copy failed)"
+                for tiff_file in tiff_files:
+                    tiff_path = os.path.join(input_dir_tiff, tiff_file)
+                    destination = os.path.join(output_dir_tiff, tiff_file)
+                    try:
+                        shutil.copy2(tiff_path, destination)
+                    except Exception as e:
+                        print(f"Error copying TIFF '{tiff_file}': {e}")
+                        selected_format = "TIFF (Copy failed)"
+                #Log once per JPG
+                log_writer.writerow([tiff_file, f"{gray_pct:.2f}", selected_format])
             elif gray_pct > HIGH_GRAY_THRESHOLD:
                 selected_format = "JPG"
                 destination = os.path.join(output_dir_jpg, jpg_file)
@@ -165,6 +174,8 @@ def process_documents(input_dir_jpg, input_dir_tiff, output_dir_jpg, output_dir_
                 except Exception as e:
                     print(f"Error copying JPG '{jpg_file}': {e}")
                     selected_format = "JPG (Copy failed)"
+                #Log once per JPG
+                log_writer.writerow([jpg_file, f"{gray_pct:.2f}", selected_format])
             else:
                 selected_format = "JPG (Intermediate)"
                 destination = os.path.join(output_dir_jpg, jpg_file)
@@ -173,9 +184,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, output_dir_jpg, output_dir_
                 except Exception as e:
                     print(f"Error copying JPG '{jpg_file}': {e}")
                     selected_format = "JPG (Intermediate Copy failed)"
-
-            document_name = last_four
-            log_writer.writerow([document_name, f"{gray_pct:.2f}", selected_format])
+                log_writer.writerow([jpg_file, f"{gray_pct:.2f}", selected_format])
     
     print(f"\nProcessing complete. Log saved to {log_file}")
 
