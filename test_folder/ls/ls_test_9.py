@@ -15,7 +15,7 @@ import logging
 # Configuration
 INPUT_DIR_JPG = "D:/test_data/JPG"      # Directory containing JPG files
 INPUT_DIR_TIFF = "D:/test_data/TIF"    # Directory containing TIFF files
-LOG_FILE = 'selection_log.csv'          # CSV file to log decisions
+LOG_FILE = 'selection_log.tsv'          # CSV file to log decisions
 
 # Thresholds for gray percentage
 LOW_GRAY_THRESHOLD = 10      # Below this percentage, use TIFF
@@ -159,7 +159,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file):
 
     # Prepare log file 
     with open(log_file, mode='w', newline='') as log_csv:
-        log_writer = csv.writer(log_csv)
+        log_writer = csv.writer(log_csv, delimiter='\t')
         log_writer.writerow(['Document', 'Gray_Percentage', 'Selected_Format'])
 
         for jpg_file in tqdm(all_jpg_files, desc="Processing Documents"):
