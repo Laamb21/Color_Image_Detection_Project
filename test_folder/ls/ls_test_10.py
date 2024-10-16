@@ -3,6 +3,7 @@ Test to determine threshold for choosing JPG or TIFF (grayscale vs. black and wh
 Refactored to eliminate output directories and only use input directories and a log file.
 Logs the selected file's full name without extension in selection_log.tsv based on the decision.
 Accounts for front (1) and back (2) captures of documents.
+Sorts the log entries first by first digit (1 then 2), and within each group by last four digits from least to greatest.
 '''
 
 # Import libraries 
@@ -12,6 +13,8 @@ import numpy as np
 from tqdm import tqdm
 import csv
 import logging
+import re
+from logging.handlers import RotatingFileHandler
 
 # Configuration
 INPUT_DIR_JPG = "D:/test_data/JPG"      # Directory containing JPG files
@@ -19,12 +22,10 @@ INPUT_DIR_TIFF = "D:/test_data/TIF"    # Directory containing TIFF files
 LOG_FILE = 'selection_log.tsv'          # TSV file to log decisions
 
 # Thresholds for gray percentage
-LOW_GRAY_THRESHOLD = 5      # Below this percentage, use TIFF
-HIGH_GRAY_THRESHOLD = 20    # Above this percentage, use JPG
+LOW_GRAY_THRESHOLD = 10      # Below this percentage, use TIFF
+HIGH_GRAY_THRESHOLD = 15    # Above this percentage, use JPG
 
 # Configure logging with rotating file handler to prevent log file from growing indefinitely
-from logging.handlers import RotatingFileHandler
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -154,10 +155,34 @@ def build_tiff_mapping(input_dir_tiff):
     
     return tiff_mapping
 
+def get_sort_key(first_digit, last_four_digits):
+    """
+    Generate a sort key based on first digit and last four digits.
+    
+    Parameters:
+        first_digit (str): The first digit indicating front (1) or back (2).
+        last_four_digits (str): The last four digits of the document number.
+    
+    Returns:
+        tuple: (int_first_digit, int_last_four_digits)
+    """
+    if first_digit and first_digit.isdigit():
+        first_digit_int = int(first_digit)
+    else:
+        first_digit_int = float('inf')  # Push to the end if invalid
+    
+    if last_four_digits and last_four_digits.isdigit():
+        last_four_digits_int = int(last_four_digits)
+    else:
+        last_four_digits_int = float('inf')  # Push to the end if invalid
+    
+    return (first_digit_int, last_four_digits_int)
+
 def process_documents(input_dir_jpg, input_dir_tiff, log_file):
     """
     Process all JPG and TIFF pairs in the input directories, decide which format to use,
     and log the selected file's base name without extension based on the decision.
+    Sorts the log entries first by first digit (1 then 2), and within each group by last four digits from least to greatest.
     
     Parameters:
         input_dir_jpg (str): Directory containing JPG files.
@@ -182,51 +207,64 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file):
         print("No valid JPG files found. Exiting.")
         return
 
-    # Prepare log file 
+    # List to hold all log entries
+    log_entries = []
+
+    # Process each JPG file
+    for jpg_file in tqdm(all_jpg_files, desc="Processing Documents"):
+        base_name, _ = os.path.splitext(jpg_file)  # Extract base name without extension
+        first_digit = extract_first_digit(jpg_file)
+        last_four = extract_last_four_digits(jpg_file)
+        if not first_digit or not last_four:
+            logging.warning(f"Could not extract necessary digits from JPG '{jpg_file}'. Skipping.")
+            continue
+
+        # Find corresponding TIFF(s)
+        key = (first_digit, last_four)
+        tiff_files = tiff_mapping.get(key)
+        if not tiff_files:
+            logging.warning(f"No corresponding TIFF found for JPG '{jpg_file}' with key {key}. Skipping.")
+            continue
+
+        jpg_path = os.path.join(input_dir_jpg, jpg_file)
+
+        gray_pct = calculate_gray_percentage(jpg_path)
+        if gray_pct is None:
+            logging.error(f"Skipping {jpg_file} due to read error.")
+            continue
+
+        # Decision logic
+        if gray_pct < LOW_GRAY_THRESHOLD:
+            selected_format = "TIFF"
+            # Log all corresponding TIFF base names, separated by commas
+            selected_documents = ', '.join([os.path.splitext(tiff)[0] for tiff in tiff_files])
+        elif gray_pct > HIGH_GRAY_THRESHOLD:
+            selected_format = "JPG"
+            # Log the JPG's base name
+            selected_documents = base_name
+        else:
+            selected_format = "JPG (Intermediate)"
+            # Log the JPG's base name
+            selected_documents = base_name
+
+        # Append the entry with sort key based on first and last four digits
+        sort_key = get_sort_key(first_digit, last_four)
+        log_entries.append((sort_key, selected_documents, f"{gray_pct:.2f}", selected_format))
+
+        # Log the decision in debug log
+        logging.info(f"Document: {selected_documents}, Gray_Percentage: {gray_pct:.2f}, Selected_Format: {selected_format}")
+
+    # Sort the log entries based on the sort key (first digit, then last four digits)
+    log_entries_sorted = sorted(log_entries, key=lambda x: x[0])
+
+    # Write the sorted entries to the TSV file
     with open(log_file, mode='w', newline='') as log_csv:
-        # Use single tab delimiter for TSV
         log_writer = csv.writer(log_csv, delimiter='\t')  # Tab delimiter
         log_writer.writerow(['Document', 'Gray_Percentage', 'Selected_Format'])  # Header
 
-        for jpg_file in tqdm(all_jpg_files, desc="Processing Documents"):
-            base_name, _ = os.path.splitext(jpg_file)  # Extract base name without extension
-            first_digit = extract_first_digit(jpg_file)
-            last_four = extract_last_four_digits(jpg_file)
-            if not first_digit or not last_four:
-                logging.warning(f"Could not extract necessary digits from JPG '{jpg_file}'. Skipping.")
-                continue
-
-            # Find corresponding TIFF(s)
-            key = (first_digit, last_four)
-            tiff_files = tiff_mapping.get(key)
-            if not tiff_files:
-                logging.warning(f"No corresponding TIFF found for JPG '{jpg_file}' with key {key}. Skipping.")
-                continue
-
-            jpg_path = os.path.join(input_dir_jpg, jpg_file)
-
-            gray_pct = calculate_gray_percentage(jpg_path)
-            if gray_pct is None:
-                logging.error(f"Skipping {jpg_file} due to read error.")
-                continue
-
-            # Decision logic
-            if gray_pct < LOW_GRAY_THRESHOLD:
-                selected_format = "TIFF"
-                # Log all corresponding TIFF base names, separated by commas
-                selected_documents = ', '.join([os.path.splitext(tiff)[0] for tiff in tiff_files])
-            elif gray_pct > HIGH_GRAY_THRESHOLD:
-                selected_format = "JPG"
-                # Log the JPG's base name
-                selected_documents = base_name
-            else:
-                selected_format = "JPG (Intermediate)"
-                # Log the JPG's base name
-                selected_documents = base_name
-
-            # Log the decision
-            log_writer.writerow([selected_documents, f"{gray_pct:.2f}", selected_format])
-            logging.info(f"Document: {selected_documents}, Gray_Percentage: {gray_pct:.2f}, Selected_Format: {selected_format}")
+        for entry in log_entries_sorted:
+            _, selected_documents, gray_pct_str, selected_format = entry
+            log_writer.writerow([selected_documents, gray_pct_str, selected_format])
 
     print(f"\nProcessing complete. Log saved to {log_file}")
     logging.info(f"Processing complete. Log saved to {log_file}")
