@@ -115,7 +115,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
             logging.error("No valid TIFF files found. Exiting.")
             progress_queue.put(("error", "No valid TIFF files found in the selected directory."))
             return
-        
+
         # Collect all JPG files
         all_jpg_files = [
             f for f in os.listdir(input_dir_jpg)
@@ -138,7 +138,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
         for jpg_file in all_jpg_files:
             # Notify the GUI of the current file
             progress_queue.put(("current_file", jpg_file))
-            
+    
             base_name, _ = os.path.splitext(jpg_file)  # Extract base name without extension
             first_digit = extract_first_digit(jpg_file)
             last_four = extract_last_four_digits(jpg_file)
@@ -196,15 +196,21 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
         log_entries_sorted = sorted(log_entries, key=lambda x: x[0])
     
         # ---------------------------- Write to TSV File ---------------------------- #
-        with open(log_file_tsv, mode='w', newline='') as log_csv:
-            log_writer = csv.writer(log_csv, delimiter='\t')  # Tab delimiter
-            # Write header with the fourth column
-            log_writer.writerow(['Document', 'Gray_Percentage', 'Selected_Format', 'Flagged_Files'])  # Header
+        try:
+            with open(log_file_tsv, mode='w', newline='') as log_csv:
+                log_writer = csv.writer(log_csv, delimiter='\t')  # Tab delimiter
+                # Write header with the fourth column
+                log_writer.writerow(['Document', 'Gray_Percentage', 'Selected_Format', 'Flagged_Files'])  # Header
     
-            # Write data rows with the fourth column empty
-            for entry in log_entries_sorted:
-                _, selected_documents, gray_pct_str, selected_format = entry
-                log_writer.writerow([selected_documents, gray_pct_str, selected_format, ''])
+                # Write data rows with the fourth column empty
+                for entry in log_entries_sorted:
+                    _, selected_documents, gray_pct_str, selected_format = entry
+                    log_writer.writerow([selected_documents, gray_pct_str, selected_format, ''])
+            logging.info(f"TSV log saved to {log_file_tsv}")
+        except Exception as e:
+            logging.error(f"Failed to write TSV log: {str(e)}")
+            progress_queue.put(("error", f"Failed to write TSV log: {str(e)}"))
+            return
     
         # ---------------------------- Write to Excel File ---------------------------- #
         try:
@@ -253,3 +259,8 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
     
         # ---------------------------- Notify Completion ---------------------------- #
         progress_queue.put(("complete", "Processing complete. Logs saved to selection_log.tsv and selection_log.xlsx", flagged_count))
+
+    except Exception as e:
+        logging.error(f"An unexpected error occurred during processing: {str(e)}")
+        progress_queue.put(("error", f"An unexpected error occurred: {str(e)}"))
+        return
