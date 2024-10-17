@@ -259,7 +259,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
     
         # ---------------------------- Notify Completion ---------------------------- #
         progress_queue.put(("complete", "Processing complete. Logs saved to selection_log.tsv and selection_log.xlsx", flagged_count))
-
+    
     except Exception as e:
         logging.error(f"An unexpected error occurred during processing: {str(e)}")
         progress_queue.put(("error", f"An unexpected error occurred: {str(e)}"))
