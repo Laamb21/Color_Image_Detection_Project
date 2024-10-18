@@ -202,13 +202,13 @@ class App:
                     
         except queue.Empty:
             pass
-        if self.processing_thread.is_alive():
+        if self.processing_thread and self.processing_thread.is_alive():
             self.root.after(100, self.process_queue)
     
     def populate_flagged_files(self):
         """Reads the TSV log file and populates the flagged_files list."""
         log_file_tsv = os.path.join(self.parent_folder.get(), "selection_log.tsv")
-        input_dir_jpg = os.path.join(self.parent_folder.get(), "JPG")
+        input_dir_tiff = os.path.join(self.parent_folder.get(), "TIF")
         
         if not os.path.exists(log_file_tsv):
             messagebox.showerror("Error", "TSV log file not found.")
@@ -218,22 +218,22 @@ class App:
             with open(log_file_tsv, 'r', newline='') as csvfile:
                 reader = csv.DictReader(csvfile, delimiter='\t')
                 for row in reader:
-                    if row['Selected_Format'] == "JPG (Intermediate)":
-                        document = row['Document']
-                        # Reconstruct the filename (assuming .jpg extension)
-                        # If the original filename had different extensions, adjust accordingly
-                        possible_extensions = ['.jpg', '.jpeg']
-                        for ext in possible_extensions:
-                            filename = document + ext
-                            filepath = os.path.join(input_dir_jpg, filename)
-                            if os.path.exists(filepath):
-                                self.flagged_files.append(filepath)
-                                break
-                        else:
-                            # If none of the extensions matched, notify the user
-                            self.log_text.configure(state='normal')
-                            self.log_text.insert(tk.END, f"Flagged file '{document}' not found with extensions .jpg or .jpeg.\n")
-                            self.log_text.configure(state='disabled')
+                    if row['Flagged_Files'] == "Yes":
+                        documents = row['Document'].split(', ')
+                        for document in documents:
+                            # Reconstruct the TIFF filename (assuming .tif or .tiff extension)
+                            possible_extensions = ['.tif', '.tiff']
+                            for ext in possible_extensions:
+                                filename = document + ext
+                                filepath = os.path.join(input_dir_tiff, filename)
+                                if os.path.exists(filepath):
+                                    self.flagged_files.append(filepath)
+                                    break
+                            else:
+                                # If none of the extensions matched, notify the user
+                                self.log_text.configure(state='normal')
+                                self.log_text.insert(tk.END, f"Flagged file '{document}' not found with extensions .tif or .tiff.\n")
+                                self.log_text.configure(state='disabled')
             if not self.flagged_files:
                 self.log_text.configure(state='normal')
                 self.log_text.insert(tk.END, "No flagged files found.\n")
