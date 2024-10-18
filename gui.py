@@ -260,9 +260,39 @@ class App:
             messagebox.showinfo("No Flagged Files", "There are no flagged files to download.")
             return
         
-        destination_folder = filedialog.askdirectory()
-        if not destination_folder:
+        # Prompt user to select the destination folder where "Flagged Files" will be created
+        destination_parent = filedialog.askdirectory(title="Select Destination for 'Flagged Files' Folder")
+        if not destination_parent:
             return  # User cancelled the dialog
+        
+        # Define the "Flagged Files" subfolder path
+        flagged_folder_name = "Flagged Files"
+        destination_folder = os.path.join(destination_parent, flagged_folder_name)
+        
+        # Check if "Flagged Files" folder already exists
+        if not os.path.exists(destination_folder):
+            try:
+                os.makedirs(destination_folder)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create 'Flagged Files' folder: {str(e)}")
+                return
+        else:
+            # Ask the user if they want to overwrite existing files
+            overwrite = messagebox.askyesno("Folder Exists", f"The folder '{flagged_folder_name}' already exists in the selected destination.\nDo you want to overwrite its contents?")
+            if overwrite:
+                # Optionally, clear existing contents
+                try:
+                    for filename in os.listdir(destination_folder):
+                        file_path = os.path.join(destination_folder, filename)
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to clear existing 'Flagged Files' folder: {str(e)}")
+                    return
+            else:
+                return  # User chose not to overwrite; cancel the operation
         
         # Start copying in a separate thread to keep GUI responsive
         copy_thread = threading.Thread(target=self.copy_flagged_files, args=(destination_folder,))
@@ -285,7 +315,7 @@ class App:
             message = f"Copied {copied_count} flagged files successfully.\nFailed to copy {len(failed_files)} files:\n{error_messages}"
             messagebox.showwarning("Download Completed with Errors", message)
         else:
-            message = f"All {copied_count} flagged files were copied successfully."
+            message = f"All {copied_count} flagged files were copied successfully to '{destination_folder}'."
             messagebox.showinfo("Download Completed", message)
     
     def open_file(self, filepath):
@@ -298,5 +328,9 @@ class App:
                 subprocess.call(['xdg-open', filepath])
             else:
                 messagebox.showerror("Unsupported OS", "Cannot open log file on this operating system.")
+        except FileNotFoundError:
+            messagebox.showerror("Error", f"The file '{filepath}' does not exist.")
+        except PermissionError:
+            messagebox.showerror("Error", f"Permission denied while trying to open '{filepath}'.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open log file: {str(e)}")
