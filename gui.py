@@ -9,10 +9,16 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog, scrolledtext, messagebox
 
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font
+
 from processing import process_documents
 
 import csv  # Needed for parsing the TSV log file
 import shutil  # Needed for copying files
+
+import logging  # Ensure logging is imported if not already
 
 class App:
     def __init__(self, root):
@@ -29,6 +35,9 @@ class App:
         
         # List to keep track of flagged files
         self.flagged_files = []
+        
+        # Initialize log entries
+        self.log_entries = []  # To store log data
         
         # Create GUI components
         self.create_widgets()
@@ -79,15 +88,17 @@ class App:
         self.log_text = scrolledtext.ScrolledText(log_frame, state='disabled')
         self.log_text.pack(fill='both', expand=True)
         
-        # ---------------------------- Open Log Buttons ---------------------------- #
+        # ---------------------------- Download Log Buttons ---------------------------- #
         buttons_frame = ttk.Frame(self.root)
         buttons_frame.pack(padx=10, pady=10, fill='x')
         
-        self.open_tsv_button = ttk.Button(buttons_frame, text="Open TSV Log", command=self.open_tsv_log_file, state='disabled')
-        self.open_tsv_button.pack(side='left', padx=(0,5))
+        # Renamed from "Open TSV Log" to "Download TSV Log"
+        self.download_tsv_button = ttk.Button(buttons_frame, text="Download TSV Log", command=self.download_tsv_log, state='disabled')
+        self.download_tsv_button.pack(side='left', padx=(0,5))
         
-        self.open_excel_button = ttk.Button(buttons_frame, text="Open Excel Log", command=self.open_excel_log_file, state='disabled')
-        self.open_excel_button.pack(side='left')
+        # Renamed from "Open Excel Log" to "Download Excel Log"
+        self.download_excel_button = ttk.Button(buttons_frame, text="Download Excel Log", command=self.download_excel_log, state='disabled')
+        self.download_excel_button.pack(side='left')
         
         # ---------------------------- Download Flagged Files Button ---------------------------- #
         self.download_flagged_button = ttk.Button(buttons_frame, text="Download Flagged Files", command=self.download_flagged_files, state='disabled')
@@ -135,6 +146,13 @@ class App:
         self.flagged_files = []
         self.download_flagged_button.config(state='disabled')  # Disable until processing is complete
         
+        # Disable download buttons until processing is complete
+        self.download_tsv_button.config(state='disabled')
+        self.download_excel_button.config(state='disabled')
+        
+        # Clear previous log entries
+        self.log_entries = []
+        
         # Start the processing in a separate thread
         self.processing_thread = threading.Thread(
             target=self.process,
@@ -148,15 +166,11 @@ class App:
     def process(self):
         input_dir_jpg = os.path.join(self.parent_folder.get(), "JPG")
         input_dir_tiff = os.path.join(self.parent_folder.get(), "TIF")
-        log_file_tsv = os.path.join(self.parent_folder.get(), "selection_log.tsv")
-        log_file_xlsx = os.path.join(self.parent_folder.get(), "selection_log.xlsx")
         
-        # Call the processing function
+        # Call the processing function without specifying log file paths
         process_documents(
             input_dir_jpg,
             input_dir_tiff,
-            log_file_tsv,
-            log_file_xlsx,
             self.progress_queue,
             self.low_threshold.get(),
             self.high_threshold.get()
@@ -182,14 +196,21 @@ class App:
                     self.log_text.configure(state='disabled')
                     messagebox.showerror("Error", message[1])
                 elif message[0] == "complete":
-                    self.log_text.configure(state='normal')
-                    self.log_text.insert(tk.END, f"{message[1]}\nFlagged Files Count: {message[2]}\n")
-                    self.log_text.configure(state='disabled')
-                    messagebox.showinfo("Complete", f"{message[1]}\nFlagged Files Count: {message[2]}")
+                    completion_message = message[1]
+                    flagged_count = message[2]
+                    log_entries_sorted = message[3]  # Retrieve log data
                     
-                    # Enable the Open Log Buttons
-                    self.open_tsv_button.config(state='normal')
-                    self.open_excel_button.config(state='normal')
+                    self.log_text.configure(state='normal')
+                    self.log_text.insert(tk.END, f"{completion_message}\nFlagged Files Count: {flagged_count}\n")
+                    self.log_text.configure(state='disabled')
+                    messagebox.showinfo("Complete", f"{completion_message}\nFlagged Files Count: {flagged_count}")
+                    
+                    # Store the log entries for downloading
+                    self.log_entries = log_entries_sorted
+                    
+                    # Enable the Download Log Buttons
+                    self.download_tsv_button.config(state='normal')
+                    self.download_excel_button.config(state='normal')
                     
                     # Enable the Download Flagged Files Button
                     self.download_flagged_button.config(state='normal')
@@ -197,7 +218,7 @@ class App:
                     # Re-enable the Run button
                     self.run_button.config(state='normal')
                     
-                    # Populate the flagged_files list by reading the TSV log
+                    # Populate the flagged_files list by reading the log entries
                     self.populate_flagged_files()
                     
         except queue.Empty:
@@ -206,54 +227,113 @@ class App:
             self.root.after(100, self.process_queue)
     
     def populate_flagged_files(self):
-        """Reads the TSV log file and populates the flagged_files list."""
-        log_file_tsv = os.path.join(self.parent_folder.get(), "selection_log.tsv")
+        """Reads the log entries and populates the flagged_files list."""
         input_dir_tiff = os.path.join(self.parent_folder.get(), "TIF")
         
-        if not os.path.exists(log_file_tsv):
-            messagebox.showerror("Error", "TSV log file not found.")
+        for entry in self.log_entries:
+            sort_key, selected_documents, gray_pct_str, selected_format, flagged = entry
+            if flagged == "Yes":
+                documents = selected_documents.split(', ')
+                for document in documents:
+                    # Reconstruct the TIFF filename (assuming .tif or .tiff extension)
+                    possible_extensions = ['.tif', '.tiff']
+                    for ext in possible_extensions:
+                        filename = document + ext
+                        filepath = os.path.join(input_dir_tiff, filename)
+                        if os.path.exists(filepath):
+                            self.flagged_files.append(filepath)
+                            break
+                    else:
+                        # If none of the extensions matched, notify the user
+                        self.log_text.configure(state='normal')
+                        self.log_text.insert(tk.END, f"Flagged file '{document}' not found with extensions .tif or .tiff.\n")
+                        self.log_text.configure(state='disabled')
+        if not self.flagged_files:
+            self.log_text.configure(state='normal')
+            self.log_text.insert(tk.END, "No flagged files found.\n")
+            self.log_text.configure(state='disabled')
+    
+    def download_tsv_log(self):
+        """Handles downloading the TSV log file to a user-selected location."""
+        if not self.log_entries:
+            messagebox.showerror("Error", "No log data available to download.")
             return
         
-        try:
-            with open(log_file_tsv, 'r', newline='') as csvfile:
-                reader = csv.DictReader(csvfile, delimiter='\t')
-                for row in reader:
-                    if row['Flagged_Files'] == "Yes":
-                        documents = row['Document'].split(', ')
-                        for document in documents:
-                            # Reconstruct the TIFF filename (assuming .tif or .tiff extension)
-                            possible_extensions = ['.tif', '.tiff']
-                            for ext in possible_extensions:
-                                filename = document + ext
-                                filepath = os.path.join(input_dir_tiff, filename)
-                                if os.path.exists(filepath):
-                                    self.flagged_files.append(filepath)
-                                    break
-                            else:
-                                # If none of the extensions matched, notify the user
-                                self.log_text.configure(state='normal')
-                                self.log_text.insert(tk.END, f"Flagged file '{document}' not found with extensions .tif or .tiff.\n")
-                                self.log_text.configure(state='disabled')
-            if not self.flagged_files:
-                self.log_text.configure(state='normal')
-                self.log_text.insert(tk.END, "No flagged files found.\n")
-                self.log_text.configure(state='disabled')
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to read TSV log file: {str(e)}")
+        # Prompt user to select the destination file path
+        destination_path = filedialog.asksaveasfilename(
+            defaultextension=".tsv",
+            filetypes=[("TSV files", "*.tsv"), ("All files", "*.*")],
+            title="Save TSV Log As"
+        )
+        if destination_path:
+            try:
+                with open(destination_path, mode='w', newline='') as log_csv:
+                    log_writer = csv.writer(log_csv, delimiter='\t')  # Tab delimiter
+                    # Write header with the fifth column
+                    log_writer.writerow(['Document', 'Gray_Percentage', 'Selected_Format', 'Flagged_Files'])
     
-    def open_tsv_log_file(self):
-        log_file_tsv = os.path.join(self.parent_folder.get(), "selection_log.tsv")
-        if os.path.exists(log_file_tsv):
-            self.open_file(log_file_tsv)
-        else:
-            messagebox.showerror("Error", "TSV log file not found.")
+                    # Write data rows
+                    for entry in self.log_entries:
+                        _, selected_documents, gray_pct_str, selected_format, flagged = entry
+                        log_writer.writerow([selected_documents, gray_pct_str, selected_format, flagged])
+                messagebox.showinfo("Success", f"TSV log has been downloaded to:\n{destination_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to download TSV log: {str(e)}")
     
-    def open_excel_log_file(self):
-        log_file_xlsx = os.path.join(self.parent_folder.get(), "selection_log.xlsx")
-        if os.path.exists(log_file_xlsx):
-            self.open_file(log_file_xlsx)
-        else:
-            messagebox.showerror("Error", "Excel log file not found.")
+    def download_excel_log(self):
+        """Handles downloading the Excel log file to a user-selected location."""
+        if not self.log_entries:
+            messagebox.showerror("Error", "No log data available to download.")
+            return
+        
+        # Prompt user to select the destination file path
+        destination_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+            title="Save Excel Log As"
+        )
+        if destination_path:
+            try:
+                wb = Workbook()
+                ws = wb.active
+                ws.title = "Selection Log"
+    
+                # Define headers
+                headers = ['Document', 'Gray Percentage (%)', 'Selected Format', 'Flagged_Files']
+                header_font = Font(bold=True)
+    
+                for col_num, header in enumerate(headers, 1):
+                    cell = ws.cell(row=1, column=col_num, value=header)
+                    cell.font = header_font
+    
+                # Write data rows
+                for row_num, entry in enumerate(self.log_entries, start=2):
+                    _, selected_documents, gray_pct_str, selected_format, flagged = entry
+                    ws.cell(row=row_num, column=1, value=selected_documents)
+                    ws.cell(row=row_num, column=2, value=float(gray_pct_str))
+                    ws.cell(row=row_num, column=3, value=selected_format)
+                    ws.cell(row=row_num, column=4, value=flagged)
+    
+                # Adjust column widths for better readability
+                for column in ws.columns:
+                    max_length = 0
+                    column_letter = get_column_letter(column[0].column)
+                    for cell in column:
+                        try:
+                            if cell.value:
+                                cell_length = len(str(cell.value))
+                                if cell_length > max_length:
+                                    max_length = cell_length
+                        except:
+                            pass
+                    adjusted_width = (max_length + 2)
+                    ws.column_dimensions[column_letter].width = adjusted_width
+    
+                # Save the workbook
+                wb.save(destination_path)
+                messagebox.showinfo("Success", f"Excel log has been downloaded to:\n{destination_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to download Excel log: {str(e)}")
     
     def download_flagged_files(self):
         if not self.flagged_files:

@@ -12,11 +12,14 @@ import logging
 from utils import extract_first_digit, extract_last_four_digits, is_valid_jpg, is_valid_tiff
 
 # Configure logging
-logging.basicConfig(
-    filename='processing_debug.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logger = logging.getLogger()
+# Remove existing handlers to prevent duplicate logs if setup_logging is called multiple times
+if not logger.handlers:
+    logging.basicConfig(
+        filename='processing_debug.log',
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
 
 def build_tiff_mapping(input_dir_tiff):
     """
@@ -36,25 +39,25 @@ def build_tiff_mapping(input_dir_tiff):
             if f.lower().endswith(('.tif', '.tiff')) and is_valid_tiff(f)
         ]
 
-        logging.info(f"Found {len(all_tiff_files)} valid TIFF files in '{input_dir_tiff}'.")
+        logger.info(f"Found {len(all_tiff_files)} valid TIFF files in '{input_dir_tiff}'.")
 
         for tiff in all_tiff_files:
             first_digit = extract_first_digit(tiff)
             last_four = extract_last_four_digits(tiff)
             if not first_digit or not last_four:
-                logging.warning(f"Could not extract necessary digits from TIFF '{tiff}'. Skipping.")
+                logger.warning(f"Could not extract necessary digits from TIFF '{tiff}'. Skipping.")
                 continue
 
             key = (first_digit, last_four)
             if key in tiff_mapping:
                 tiff_mapping[key].append(tiff)
-                logging.info(f"Appending to existing key {key}: {tiff}")
+                logger.info(f"Appending to existing key {key}: {tiff}")
             else:
                 tiff_mapping[key] = [tiff]
-                logging.info(f"Mapping {key} to {tiff}")
+                logger.info(f"Mapping {key} to {tiff}")
 
     except Exception as e:
-        logging.error(f"Error building TIFF mapping: {str(e)}")
+        logger.error(f"Error building TIFF mapping: {str(e)}")
         raise  # Re-raise exception to be handled by the caller
 
     return tiff_mapping
@@ -73,17 +76,17 @@ def calculate_gray_percentage(image_path):
     try:
         image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
         if image is None:
-            logging.error(f"Error reading image: {image_path}")
+            logger.error(f"Error reading image: {image_path}")
             return None
 
         total_pixels = image.size
         # Count pixels that are not 0 and not 255
         gray_pixels = np.count_nonzero((image > 0) & (image < 255))
         gray_percentage = (gray_pixels / total_pixels) * 100
-        logging.debug(f"Image '{image_path}' has {gray_percentage:.2f}% gray pixels.")
+        logger.debug(f"Image '{image_path}' has {gray_percentage:.2f}% gray pixels.")
         return gray_percentage
     except Exception as e:
-        logging.error(f"Exception while calculating gray percentage for '{image_path}': {str(e)}")
+        logger.error(f"Exception while calculating gray percentage for '{image_path}': {str(e)}")
         return None
 
 def get_sort_key(first_digit, last_four_digits):
@@ -110,21 +113,19 @@ def get_sort_key(first_digit, last_four_digits):
 
         return (first_digit_int, last_four_digits_int)
     except Exception as e:
-        logging.error(f"Exception in get_sort_key with first_digit='{first_digit}', last_four_digits='{last_four_digits}': {str(e)}")
+        logger.error(f"Exception in get_sort_key with first_digit='{first_digit}', last_four_digits='{last_four_digits}': {str(e)}")
         return (float('inf'), float('inf'))
 
-def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx, progress_queue, low_threshold, high_threshold):
+def process_documents(input_dir_jpg, input_dir_tiff, progress_queue, low_threshold, high_threshold):
     """
     Process all JPG and TIFF pairs in the input directories, decide which format to use,
-    and log the selected file's base name without extension based on the decision.
+    and prepare log entries based on the decision.
     Sorts the log entries first by first digit (1 then 2), and within each group by last four digits from least to greatest.
     Adds a count of "TIF (Intermediate)" selections.
 
     Parameters:
         input_dir_jpg (str): Directory containing JPG files.
         input_dir_tiff (str): Directory containing TIFF files.
-        log_file_tsv (str): Path to the TSV log file.
-        log_file_xlsx (str): Path to the Excel log file.
         progress_queue (queue.Queue): Queue to communicate progress to the GUI.
         low_threshold (float): Low gray threshold percentage.
         high_threshold (float): High gray threshold percentage.
@@ -134,7 +135,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
         tiff_mapping = build_tiff_mapping(input_dir_tiff)
         if not tiff_mapping:
             error_message = "No valid TIFF files found in the selected directory."
-            logging.error(error_message)
+            logger.error(error_message)
             progress_queue.put(("error", error_message))
             return
 
@@ -146,7 +147,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
 
         if not all_jpg_files:
             error_message = "No valid JPG files found in the selected directory."
-            logging.error(error_message)
+            logger.error(error_message)
             progress_queue.put(("error", error_message))
             return
 
@@ -166,7 +167,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
             first_digit = extract_first_digit(jpg_file)
             last_four = extract_last_four_digits(jpg_file)
             if not first_digit or not last_four:
-                logging.warning(f"Could not extract necessary digits from JPG '{jpg_file}'. Skipping.")
+                logger.warning(f"Could not extract necessary digits from JPG '{jpg_file}'. Skipping.")
                 processed_files += 1
                 progress_queue.put(("progress", processed_files, total_files))
                 continue
@@ -175,7 +176,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
             key = (first_digit, last_four)
             tiff_files = tiff_mapping.get(key)
             if not tiff_files:
-                logging.warning(f"No corresponding TIFF found for JPG '{jpg_file}' with key {key}. Skipping.")
+                logger.warning(f"No corresponding TIFF found for JPG '{jpg_file}' with key {key}. Skipping.")
                 processed_files += 1
                 progress_queue.put(("progress", processed_files, total_files))
                 continue
@@ -184,7 +185,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
 
             gray_pct = calculate_gray_percentage(jpg_path)
             if gray_pct is None:
-                logging.error(f"Skipping {jpg_file} due to read error.")
+                logger.error(f"Skipping {jpg_file} due to read error.")
                 processed_files += 1
                 progress_queue.put(("progress", processed_files, total_files))
                 continue
@@ -212,7 +213,7 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
             log_entries.append((sort_key, selected_documents, f"{gray_pct:.2f}", selected_format, flagged))
 
             # Log the decision in debug log
-            logging.info(f"Document: {selected_documents}, Gray_Percentage: {gray_pct:.2f}, Selected_Format: {selected_format}, Flagged: {flagged}")
+            logger.info(f"Document: {selected_documents}, Gray_Percentage: {gray_pct:.2f}, Selected_Format: {selected_format}, Flagged: {flagged}")
 
             # Update progress
             processed_files += 1
@@ -222,75 +223,12 @@ def process_documents(input_dir_jpg, input_dir_tiff, log_file_tsv, log_file_xlsx
         log_entries_sorted = sorted(log_entries, key=lambda x: x[0])
 
     except Exception as e:
-        logging.error(f"An unexpected error occurred during processing: {str(e)}")
+        logger.error(f"An unexpected error occurred during processing: {str(e)}")
         progress_queue.put(("error", f"An unexpected error occurred: {str(e)}"))
         return
 
-    # ---------------------------- Write to TSV File ---------------------------- #
-    try:
-        with open(log_file_tsv, mode='w', newline='') as log_csv:
-            log_writer = csv.writer(log_csv, delimiter='\t')  # Tab delimiter
-            # Write header with the fifth column
-            log_writer.writerow(['Document', 'Gray_Percentage', 'Selected_Format', 'Flagged_Files'])
+    # ---------------------------- Notify Completion with Log Data ---------------------------- #
+    completion_message = "Processing complete."
+    logger.info(completion_message)
+    progress_queue.put(("complete", completion_message, flagged_count, log_entries_sorted))
 
-            # Write data rows with the fifth column indicating flagged status
-            for entry in log_entries_sorted:
-                _, selected_documents, gray_pct_str, selected_format, flagged = entry
-                log_writer.writerow([selected_documents, gray_pct_str, selected_format, flagged])
-        logging.info(f"TSV log saved to {log_file_tsv}")
-    except Exception as e:
-        error_message = f"Failed to write TSV log: {str(e)}"
-        logging.error(error_message)
-        progress_queue.put(("error", error_message))
-        return
-
-    # ---------------------------- Write to Excel File ---------------------------- #
-    try:
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Selection Log"
-
-        # Define headers
-        headers = ['Document', 'Gray Percentage (%)', 'Selected Format', 'Flagged_Files']
-        header_font = Font(bold=True)
-
-        for col_num, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col_num, value=header)
-            cell.font = header_font
-
-        # Write data rows
-        for row_num, entry in enumerate(log_entries_sorted, start=2):
-            _, selected_documents, gray_pct_str, selected_format, flagged = entry
-            ws.cell(row=row_num, column=1, value=selected_documents)
-            ws.cell(row=row_num, column=2, value=float(gray_pct_str))
-            ws.cell(row=row_num, column=3, value=selected_format)
-            ws.cell(row_num, column=4, value=flagged)
-
-        # Adjust column widths for better readability
-        for column in ws.columns:
-            max_length = 0
-            column_letter = get_column_letter(column[0].column)
-            for cell in column:
-                try:
-                    if cell.value:
-                        cell_length = len(str(cell.value))
-                        if cell_length > max_length:
-                            max_length = cell_length
-                except:
-                    pass
-            adjusted_width = (max_length + 2)
-            ws.column_dimensions[column_letter].width = adjusted_width
-
-        # Save the workbook
-        wb.save(log_file_xlsx)
-        logging.info(f"Excel log saved to {log_file_xlsx}")
-    except Exception as e:
-        error_message = f"Failed to write Excel log: {str(e)}"
-        logging.error(error_message)
-        progress_queue.put(("error", error_message))
-        return
-
-    # ---------------------------- Notify Completion ---------------------------- #
-    completion_message = "Processing complete. Logs saved to selection_log.tsv and selection_log.xlsx"
-    logging.info(completion_message)
-    progress_queue.put(("complete", completion_message, flagged_count))
