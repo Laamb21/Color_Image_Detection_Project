@@ -18,7 +18,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("JPG and TIFF Processor")
-        self.root.geometry("800x600")
+        self.root.geometry("800x700")
         
         # Initialize variables
         self.parent_folder = tk.StringVar()
