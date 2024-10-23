@@ -35,6 +35,9 @@ class App:
         
         # List to keep track of flagged files
         self.flagged_files = []
+
+        # List to keep track of selected files 
+        self.selected_files = []
         
         # Initialize log entries
         self.log_entries = []  # To store log data
@@ -103,7 +106,11 @@ class App:
         # ---------------------------- Download Flagged Files Button ---------------------------- #
         self.download_flagged_button = ttk.Button(buttons_frame, text="Download Flagged Files", command=self.download_flagged_files, state='disabled')
         self.download_flagged_button.pack(side='left', padx=(5,0))
-    
+
+        # ---------------------------- Download Selected Files Button ---------------------------- #
+        self.download_selected_button = ttk.Button(buttons_frame, text="Download Selected Files", command=self.download_selected_files, state='disabled')
+        self.download_selected_button.pack(side='left', padx=(5,0))
+
     def validate_threshold(self, P):
         """Validate that the input is a valid float."""
         if P == "":
@@ -214,6 +221,9 @@ class App:
                     
                     # Enable the Download Flagged Files Button
                     self.download_flagged_button.config(state='normal')
+
+                    #Enable the Download Selected Files Button
+                    self.download_selected_button.config(state='normal')
                     
                     # Re-enable the Run button
                     self.run_button.config(state='normal')
@@ -253,6 +263,41 @@ class App:
             self.log_text.insert(tk.END, "No flagged files found.\n")
             self.log_text.configure(state='disabled')
     
+    def populate_selected_files(self):
+        """Populates the selected_files list based on the selected_format in log_entries."""
+        input_dir_jpg = os.path.join(self.parent_folder.get(), "JPG")
+        input_dir_tiff = os.path.join(self.parent_folder.get(), "TIF")
+        
+        for entry in self.log_entries:
+            sort_key, selected_documents, gray_pct_str, selected_format, flagged = entry
+            documents = selected_documents.split(', ')
+            for document in documents:
+                if selected_format == "JPG":
+                    # Assume JPG files have .jpg or .jpeg extensions
+                    possible_extensions = ['.jpg', '.jpeg']
+                    for ext in possible_extensions:
+                        filename = document + ext
+                        filepath = os.path.join(input_dir_jpg, filename)
+                        if os.path.exists(filepath):
+                            self.selected_files.append(filepath)
+                            break
+                elif selected_format in ["TIFF", "TIF (Intermediate)"]:
+                    # Assume TIFF files have .tif or .tiff extensions
+                    possible_extensions = ['.tif', '.tiff']
+                    for ext in possible_extensions:
+                        filename = document + ext
+                        filepath = os.path.join(input_dir_tiff, filename)
+                        if os.path.exists(filepath):
+                            self.selected_files.append(filepath)
+                            break
+                # If needed, handle other formats
+                    
+        if not self.selected_files:
+            self.log_text.configure(state='normal')
+            self.log_text.insert(tk.END, "No selected files found.\n")
+            self.log_text.configure(state='disabled')
+
+
     def download_tsv_log(self):
         """Handles downloading the TSV log file to a user-selected location."""
         if not self.log_entries:
@@ -377,6 +422,50 @@ class App:
         # Start copying in a separate thread to keep GUI responsive
         copy_thread = threading.Thread(target=self.copy_flagged_files, args=(destination_folder,))
         copy_thread.start()
+
+    def download_selected_files(self):
+        if not self.selected_files:
+            messagebox.showinfo("No Selected Files", "There are no selected files to download.")
+            return
+        
+        # Prompt user to select the destination folder where "Selected Files" will be created
+        destination_parent = filedialog.askdirectory(title="Select Destination for 'Selected Files' Folder")
+        if not destination_parent:
+            return  # User cancelled the dialog
+        
+        # Define the "Selected Files" subfolder path
+        selected_folder_name = "Selected Files"
+        destination_folder = os.path.join(destination_parent, selected_folder_name)
+        
+        # Check if "Selected Files" folder already exists
+        if not os.path.exists(destination_folder):
+            try:
+                os.makedirs(destination_folder)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create 'Selected Files' folder: {str(e)}")
+                return
+        else:
+            # Ask the user if they want to overwrite existing files
+            overwrite = messagebox.askyesno("Folder Exists", f"The folder '{selected_folder_name}' already exists in the selected destination.\nDo you want to overwrite its contents?")
+            if overwrite:
+                # Optionally, clear existing contents
+                try:
+                    for filename in os.listdir(destination_folder):
+                        file_path = os.path.join(destination_folder, filename)
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to clear existing 'Selected Files' folder: {str(e)}")
+                    return
+            else:
+                return  # User chose not to overwrite; cancel the operation
+        
+        # Start copying in a separate thread to keep GUI responsive
+        copy_thread = threading.Thread(target=self.copy_selected_files, args=(destination_folder,))
+        copy_thread.start()
+
     
     def copy_flagged_files(self, destination_folder):
         copied_count = 0
@@ -397,7 +486,28 @@ class App:
         else:
             message = f"All {copied_count} flagged files were copied successfully to '{destination_folder}'."
             messagebox.showinfo("Download Completed", message)
-    
+
+    def copy_selected_files(self, destination_folder):
+        copied_count = 0
+        failed_files = []
+        
+        for filepath in self.selected_files:
+            try:
+                shutil.copy2(filepath, destination_folder)
+                copied_count += 1
+            except Exception as e:
+                failed_files.append((filepath, str(e)))
+        
+        # Notify the user upon completion
+        if failed_files:
+            error_messages = "\n".join([f"{os.path.basename(f[0])}: {f[1]}" for f in failed_files])
+            message = f"Copied {copied_count} selected files successfully.\nFailed to copy {len(failed_files)} files:\n{error_messages}"
+            messagebox.showwarning("Download Completed with Errors", message)
+        else:
+            message = f"All {copied_count} selected files were copied successfully to '{destination_folder}'."
+            messagebox.showinfo("Download Completed", message)
+
+        
     def open_file(self, filepath):
         try:
             if sys.platform.startswith('darwin'):
