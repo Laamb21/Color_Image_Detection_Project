@@ -230,6 +230,9 @@ class App:
                     
                     # Populate the flagged_files list by reading the log entries
                     self.populate_flagged_files()
+
+                    # Populate the selected files list based on log entries
+                    self.populate_selected_files()
                     
         except queue.Empty:
             pass
@@ -272,6 +275,7 @@ class App:
             sort_key, selected_documents, gray_pct_str, selected_format, flagged = entry
             documents = selected_documents.split(', ')
             for document in documents:
+                # Depending on the selected format,, determine the file type
                 if selected_format == "JPG":
                     # Assume JPG files have .jpg or .jpeg extensions
                     possible_extensions = ['.jpg', '.jpeg']
