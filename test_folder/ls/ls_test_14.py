@@ -1,13 +1,20 @@
 '''
 Test to implement screen transition
 States to add:
-    Welcome (initial)
-    Upload (user uploads file path)
-    Threshold (user adjusts threshold)
-    Verify Input(user is able to verify file path and thresholds before running script)
-    Run (progress bar to indicate script is running)
-    Results (shows how many files were flagged, logs available for download)
-    Verify Output(user selected which flagged files to select, can download folder when done)
+    1. Welcome 
+        When app is first ran, user is greeted with a welcome screen
+    2. Upload RAW
+        User can upload set folder/post scan raw folder (must contain JPG AND TIF folders)
+    3. Threshold 
+        User can set low & high grayscale thresholds
+    4. Verify 
+        User must select checkboxes to verify file path for set/post scan raw folder as well as grayscale thresholds before 
+        running script
+    5. Run 
+        Progress bar to indicate script is running
+    6. Results 
+        After script is completed, results will show log files, selected files, and flagged files. User can either run another set
+        or exit the app
 '''
 
 #Import libraries
@@ -15,11 +22,43 @@ import queue
 import tkinter as tk
 from tkinter import ttk
 
-class App():
-    def __init__(self, root):
-        self.root = root
-        self.root.title("JPG and TIFF Processor ")
-        self.root.geometry("600x600")
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("JPG and TIFF Processor ")
+        self.geometry("600x600")
+
+        #Container for state frames 
+        self.container = ttk.Frame(self)
+        self.container.pack(fill="both", expand=True)
+
+        self.frames = {}
+        for F in (WelcomeScreen, 
+                  #UploadScreen, 
+                  #ThresholdScreen, 
+                  #VerifyScreen, 
+                  #RunScreen, 
+                  #ResultsScreen
+                  ):
+            frame = F(parent=self.container, controller=self)
+            self.frames[F.__name__] = frame
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.current_state = None
+        self.user_data = {}
+
+        self.show_frame("WelcomeScreen")
+        
+    def show_frame(self, page_name):
+        frame = self.frames[page_name]
+        frame.tkraise()
+        self.current_state = page_name
+        
+        
+        
+        '''
+        Come back and use these later 
+        
 
         #Initialize variables
         self.parent_folder = tk.StringVar()                 
@@ -53,10 +92,24 @@ class App():
 
         #Initialize current state
         self.current_state = 0
-
-        #Container for state frames 
-        self.container = ttk.Frame(self.root)
-        self.container.pack(fill="both", expand=True)
-
+        '''
         
+class WelcomeScreen(ttk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        company_name = tk.Label(self, text="archSCAN LLC", font=("Helvetica", 24, "bold"))
+        company_name.pack(anchor="n", expand=True, fill='x', padx=20, pady=20)
+
+        welcome_label = ttk.Label(self, text="Welcome to the JPG and TIF Processor!")
+        welcome_label.pack(expand=True)
+
+        start_button = ttk.Button(self, text="Get Started", command=lambda: controller.show_frame("UploadScreen"))
+        start_button.pack()
+
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
+
 
