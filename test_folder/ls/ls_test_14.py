@@ -98,14 +98,16 @@ class WelcomeScreen(ttk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
+        self.pack(fill='x')
 
         company_name = tk.Label(self, text="archSCAN LLC", font=("Helvetica", 24, "bold"))
-        company_name.pack(anchor="n", expand=True, fill='x', padx=20, pady=20)
+        #company_name.pack(expand=True, fill='x', padx=20, pady=20)
+        company_name.place(relx=0.5, rely=0.5, anchor='center')
 
-        welcome_label = ttk.Label(self, text="Welcome to the JPG and TIF Processor!")
+        welcome_label = tk.Label(self, text="Welcome to the JPG and TIF Processor!")
         welcome_label.pack(expand=True)
 
-        start_button = ttk.Button(self, text="Get Started", command=lambda: controller.show_frame("UploadScreen"))
+        start_button = tk.Button(self, text="Get Started", command=lambda: controller.show_frame("UploadScreen"))
         start_button.pack()
 
 if __name__ == "__main__":
