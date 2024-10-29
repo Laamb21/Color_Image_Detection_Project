@@ -100,9 +100,9 @@ class WelcomeScreen(ttk.Frame):
         self.controller = controller
         self.pack(fill='x')
 
-        company_name = tk.Label(self, text="archSCAN LLC", font=("Helvetica", 24, "bold"))
-        #company_name.pack(expand=True, fill='x', padx=20, pady=20)
-        company_name.place(relx=0.5, rely=0.5, anchor='center')
+        company_name = tk.Label(self, image='archSCAN_logo.png', font=("Helvetica", 24, "bold"))
+        company_name.pack(expand=True, fill='x', padx=20, pady=20)
+        #company_name.place(relx=0.5, rely=0.5, anchor='center')
 
         welcome_label = tk.Label(self, text="Welcome to the JPG and TIF Processor!")
         welcome_label.pack(expand=True)
