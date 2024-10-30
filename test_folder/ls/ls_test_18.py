@@ -16,6 +16,8 @@ class App:
 
         # Initialize variables
         self.parent_folder = tk.StringVar()
+        self.low_threshold = tk.DoubleVar(value=10.0)   # Default low threshold
+        self.high_threshold = tk.DoubleVar(value=15.0)  # Default high threshold
 
         # Function call to create header
         self.create_header()
@@ -89,7 +91,8 @@ class App:
         # Define frame names and corresponding classes
         frame_classes = {
             "welcome": WelcomeFrame,
-            "upload": UploadFrame
+            "upload": UploadFrame,
+            "threshold": ThresholdFrame
         }
 
         for name, F in frame_classes.items():
@@ -188,7 +191,7 @@ class UploadFrame(tk.Frame):
             padx=20, 
             font=("Merriweather", 16, "bold"),
             state='disabled',  # Initially disabled
-            command=self.next_action  # Placeholder for future command
+            command=lambda: controller.show_frame("threshold")  # Placeholder for future command
         )
         self.next_button.pack(side='right')
 
@@ -199,11 +202,6 @@ class UploadFrame(tk.Frame):
             messagebox.showinfo("Folder Selected", f"Selected folder: {folder_selected}")
             self.next_button.config(state='normal')  # Enable the "Next" button
 
-    def next_action(self):
-        # Placeholder for future functionality
-        print("Next button clicked. Implement the desired functionality here.")
-        messagebox.showinfo("Next", "Next button clicked. Functionality to be implemented.")
-
     def upload_action(self):
         folder = self.controller.parent_folder.get()
         if os.path.isdir(folder):
@@ -213,6 +211,101 @@ class UploadFrame(tk.Frame):
         else:
             print(f"Invalid folder path: {folder}")
             messagebox.showerror("Error", f"Folder '{folder}' does not exist.")
+
+class ThresholdFrame(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg='white')
+        self.controller = controller
+
+        # Create an inner frame to center content
+        inner_frame = tk.Frame(self, bg='white')
+        inner_frame.pack(expand=True, padx=20, pady=20)
+
+        # Create "Set Grayscale Threshold" label
+        set_grayscale_threshold_label = tk.Label(
+            inner_frame, 
+            text="Set Grayscale Threshold",
+            font=("Merriweather", 24, "bold"), 
+            bg='white'
+        )
+        set_grayscale_threshold_label.pack(pady=(0, 20))
+
+        # Create a frame for Low Grayscale Threshold
+        low_threshold_frame = tk.Frame(inner_frame, bg='white')
+        low_threshold_frame.pack(pady=10, anchor='w')  # Anchor to west (left)
+
+        # Create "Low Grayscale Threshold" label inside low_threshold_frame
+        low_grayscale_threshold_label = tk.Label(
+            low_threshold_frame,
+            text="Low Grayscale Threshold:",
+            font=("Merriweather", 18, "bold"), 
+            bg='white'
+        )
+        low_grayscale_threshold_label.grid(row=0, column=0, sticky='w')
+
+        # Create Low Grayscale Threshold entry inside low_threshold_frame
+        low_grayscale_threshold_entry = tk.Entry(
+            low_threshold_frame,
+            textvariable=controller.low_threshold,
+            width=10,
+            font=("Arial", 12)
+        )
+        low_grayscale_threshold_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        # Optionally, create High Grayscale Threshold
+        high_threshold_frame = tk.Frame(inner_frame, bg='white')
+        high_threshold_frame.pack(pady=10, anchor='w')  # Anchor to west (left)
+
+        # Create "High Grayscale Threshold" label inside high_threshold_frame
+        high_grayscale_threshold_label = tk.Label(
+            high_threshold_frame,
+            text="High Grayscale Threshold:",
+            font=("Merriweather", 18, "bold"), 
+            bg='white'
+        )
+        high_grayscale_threshold_label.grid(row=0, column=0, sticky='w')
+
+        # Create High Grayscale Threshold entry inside high_threshold_frame
+        high_grayscale_threshold_entry = tk.Entry(
+            high_threshold_frame,
+            textvariable=controller.high_threshold,
+            width=10,
+            font=("Arial", 12)
+        )
+        high_grayscale_threshold_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        # Create a frame for navigation buttons (e.g., Back, Next)
+        nav_button_frame = tk.Frame(self, bg='white')
+        nav_button_frame.pack(fill='both', expand=False, pady=20)
+
+        # Create "Back" button
+        back_button = tk.Button(
+            nav_button_frame, 
+            text="Back", 
+            bg="#4a90e3", 
+            fg='white', 
+            padx=20, 
+            font=("Merriweather", 16, "bold"),
+            command=lambda: controller.show_frame("upload")
+        )
+        back_button.pack(side='left')
+
+        # Create "Next" button (if needed)
+        next_button = tk.Button(
+             nav_button_frame, 
+             text="Next", 
+             bg="#4a90e3", 
+             fg='white', 
+             padx=20, 
+             font=("Merriweather", 16, "bold"),
+             command=self.next_action  # Placeholder for future command
+         )
+        next_button.pack(side='right')
+
+    # Placeholder for future functionality
+    def next_action(self):
+        print("Next button clicked. Implement the desired functionality here.")
+        messagebox.showinfo("Next", "Next button clicked. Functionality to be implemented.")
 
 def main():    
     # Initialize and run the GUI
