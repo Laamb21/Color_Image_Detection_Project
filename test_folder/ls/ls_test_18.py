@@ -2,7 +2,7 @@
 
 # Import libraries
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from tkinter import messagebox  # Import messagebox explicitly
 from PIL import Image, ImageTk
 import os
@@ -147,33 +147,62 @@ class UploadFrame(tk.Frame):
 
         # Create an inner frame to center content
         inner_frame = tk.Frame(self, bg='white')
-        inner_frame.pack(expand=True)
+        inner_frame.pack(expand=True, padx=20, pady=20)
 
         # Create "Upload Set" label inside inner_frame
         upload_set_label = tk.Label(
             inner_frame, 
-            text="Upload Set (set must contain \n'JPG' and 'TIF' folders)", 
+            text="Upload Set \n(set must contain \n'JPG' and 'TIF' folders)", 
             font=("Merriweather", 24, "bold"), 
             bg='white'
         )
         upload_set_label.pack(pady=(0, 20))  # Reduced top padding
 
         # Create upload entry inside inner_frame
-        upload_set_entry = tk.Entry(inner_frame, textvariable=controller.parent_folder, width=50, font=("Arial", 12))
+        upload_set_entry = tk.Entry(inner_frame, textvariable=controller.parent_folder, width=75, font=("Arial", 12))
         upload_set_entry.pack(pady=10)
 
         # Create upload button inside inner_frame
         upload_set_button = tk.Button(
             inner_frame, 
-            text="Upload", 
+            text="Upload",  # Consider renaming to "Select Folder" for clarity
             bg="#4a90e3", 
             fg='white', 
-            padx=40, 
-            pady=15, 
+            padx=20, 
+            pady=10, 
             font=("Merriweather", 16, "bold"),
-            command=self.upload_action
+            command=self.select_folder
         )
         upload_set_button.pack(pady=10)
+
+        # Create a frame for the "Next" button
+        next_button_frame = tk.Frame(self, bg='white')
+        next_button_frame.pack(fill='both', expand=False, padx=20, pady=10)
+
+        # Create "Next" button inside next_button_frame
+        self.next_button = tk.Button(
+            next_button_frame, 
+            text="Next", 
+            bg="#4a90e3", 
+            fg='white', 
+            padx=20, 
+            font=("Merriweather", 16, "bold"),
+            state='disabled',  # Initially disabled
+            command=self.next_action  # Placeholder for future command
+        )
+        self.next_button.pack(side='right')
+
+    def select_folder(self):
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.controller.parent_folder.set(folder_selected)
+            messagebox.showinfo("Folder Selected", f"Selected folder: {folder_selected}")
+            self.next_button.config(state='normal')  # Enable the "Next" button
+
+    def next_action(self):
+        # Placeholder for future functionality
+        print("Next button clicked. Implement the desired functionality here.")
+        messagebox.showinfo("Next", "Next button clicked. Functionality to be implemented.")
 
     def upload_action(self):
         folder = self.controller.parent_folder.get()
