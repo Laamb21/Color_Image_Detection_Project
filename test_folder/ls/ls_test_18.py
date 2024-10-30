@@ -92,7 +92,8 @@ class App:
         frame_classes = {
             "welcome": WelcomeFrame,
             "upload": UploadFrame,
-            "threshold": ThresholdFrame
+            "threshold": ThresholdFrame, 
+            "verify": VerifyFrame
         }
 
         for name, F in frame_classes.items():
@@ -298,14 +299,37 @@ class ThresholdFrame(tk.Frame):
              fg='white', 
              padx=20, 
              font=("Merriweather", 16, "bold"),
-             command=self.next_action  # Placeholder for future command
+             command=lambda: controller.show_frame("verify")
          )
         next_button.pack(side='right')
 
-    # Placeholder for future functionality
-    def next_action(self):
-        print("Next button clicked. Implement the desired functionality here.")
-        messagebox.showinfo("Next", "Next button clicked. Functionality to be implemented.")
+
+class VerifyFrame(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg='white')
+        self.controller = controller
+
+        # Create an inner frame to center content
+        inner_frame = tk.Frame(self, bg='white')
+        inner_frame.pack(expand=True, padx=20, pady=20)
+
+        #Create label to prompt user to verify information before running script
+        verify_info_label = tk.Label(
+            inner_frame, 
+            text="Check the boxes to verify \nthe folder and thresholds \nbefore running script",
+            font=("Merriweather", 24, "bold"), 
+            bg='white'
+        )
+        verify_info_label.pack(pady=(0, 20))
+
+        #Create label that shows uploaded folder
+        folder_label = tk.Label(
+            inner_frame,
+            text="Folder: ",
+            font=("Merriweather", 24, "bold"),
+            bg='white'
+        )
+        folder_label.pack(pady=(0, 20))
 
 def main():    
     # Initialize and run the GUI
