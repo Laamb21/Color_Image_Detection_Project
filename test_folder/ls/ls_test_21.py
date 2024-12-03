@@ -26,7 +26,7 @@ class App:
         self.create_header()
 
         #Function call ro create frame 
-        self.create_frames
+        self.create_frames()
 
         #Function call to show initial frame
         self.show_frame("welcome")
@@ -126,16 +126,20 @@ class WelcomeFrame(tk.Frame):
 
         # Create an inner frame to center content
         inner_frame = tk.Frame(self, bg='white')
-        inner_frame.pack(expand=True)
+        inner_frame.pack()
 
         # Create "Welcome!" label inside inner_frame
         welcome_label = tk.Label(
             inner_frame, 
-            text="Welcome to the \nJPG and TIF Processor!", 
+            text="Welcome to the Post Scan Output QC Script", 
             font=("Merriweather", 24, "bold"), 
             bg='white'
         )
-        welcome_label.pack(pady=(0, 20))  # Reduced top padding
+        welcome_label.pack(pady=(10,20))  # Reduced top padding
+
+        #Create instructions label inside inner_frame
+        instructions = tk.Menubutton(inner_frame)
+        instructions.pack()
 
 
 
