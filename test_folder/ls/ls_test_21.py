@@ -12,6 +12,7 @@ Script to do the following:
 import tkinter as tk
 import os
 from PIL import Image, ImageTk
+from tkinter import filedialog, messagebox
 
 
 class App:
@@ -21,7 +22,9 @@ class App:
         self.root.geometry("800x700") #Change to fill screen 
 
         #Initialize variables 
-
+        self.post_scan_output_folder = tk.StringVar()
+        self.post_scan_raw_folder = tk.StringVar()
+        
         #Function call to create header
         self.create_header()
 
@@ -94,8 +97,8 @@ class App:
 
         #Define frame names and corresponding classes
         frame_classes = {
-            "welcome": WelcomeFrame        #Frame for introducing user and displaying instructions
-            #"upload": UploadFrame          #Frame for uploading Post Scan Output and Post Scan Raw
+            "welcome": WelcomeFrame,        #Frame for introducing user and displaying instructions
+            "upload": UploadFrame           #Frame for uploading Post Scan Output and Post Scan Raw
             #"mapping": MappingFrame        #Frame to map JPGs and TIF from Post Scan Raw
             #"analyze": AnalyzeFrame        #Frame to extract all TIF files from Post Scan Output and corresponding JPGs
             #"qc": QCFrame                  #Frame to let user either keep TIF in Post Scan raw or update with corresponding JPG
@@ -126,7 +129,7 @@ class WelcomeFrame(tk.Frame):
 
         # Create an inner frame to center content
         inner_frame = tk.Frame(self, bg='white')
-        inner_frame.pack()
+        inner_frame.pack(fill="x")
 
         # Create "Welcome!" label inside inner_frame
         welcome_label = tk.Label(
@@ -135,11 +138,83 @@ class WelcomeFrame(tk.Frame):
             font=("Merriweather", 24, "bold"), 
             bg='white'
         )
-        welcome_label.pack(pady=(10,20))  # Reduced top padding
+        welcome_label.pack(pady=20)  # Reduced top padding
 
         #Create instructions label inside inner_frame
-        instructions = tk.Menubutton(inner_frame)
-        instructions.pack()
+        instructions_text = tk.Text(
+        inner_frame,
+        font=("Merriweather", 14),
+        bg="white",
+        wrap="word",
+        height=15,  # Adjust as needed
+        borderwidth=0,
+        highlightthickness=0
+        )
+        instructions_text.pack(anchor='w', padx=30, pady=(10, 20))
+
+        # Insert instructions
+        instructions_content = (
+            "Instructions:\n"
+            "1. Select the Post Scan Output and Post Scan Raw folder you would like to QC.\n"
+            "2. Map JPG to TIF files from Post Scan Raw.\n"
+            "3. Find all TIF files from Post Scan Output and corresponding JPG from mapping.\n"
+            "4. Display both TIF (from Post Scan Output) and JPG (from Post Scan Raw).\n"
+            "5. Select whether to keep the current TIF file or replace TIF with JPG.\n"
+            "6. Update Post Scan Raw based on your selection."
+        )
+        instructions_text.insert(tk.END, instructions_content)
+        instructions_text.tag_configure("spacing", spacing1=15)
+        instructions_text.tag_add("spacing", "1.20", "end")
+
+        # Create a frame for the "Next" button
+        next_button_frame = tk.Frame(self, bg='white')
+        next_button_frame.pack(fill='both', expand=False, padx=20, pady=10)
+
+        # Create "Next" button inside next_button_frame
+        self.next_button = tk.Button(
+            next_button_frame, 
+            text="Next", 
+            bg="#4a90e3", 
+            fg='white', 
+            padx=20, 
+            font=("Merriweather", 16, "bold"),
+            command=lambda: controller.show_frame("upload")  # Placeholder for future command
+        )
+        self.next_button.pack(side='right')
+
+
+class UploadFrame(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg='white')
+        self.controller = controller
+
+        #Frame for buttons 
+        button_frame = tk.Frame(self, bg="white")
+        button_frame.pack(fill='x')
+
+        #Select folder button
+        selcet_folder_button = tk.Button(
+            button_frame, 
+            text="Select Folder",  
+            bg="#4a90e3", 
+            fg='white', 
+            padx=10, 
+            pady=10, 
+            font=("Merriweather", 14, "bold"),
+            command=self.upload_folder
+        )
+        selcet_folder_button.pack(anchor="n", pady=20, padx=20)
+
+    def upload_folder(self):
+        selected_folder = filedialog.askdirectory(title="Select Folder")
+        if selected_folder:
+            if selected_folder not in self.folders:
+                self.folders.append(selected_folder)
+                self.folder_listbox.insert(tk.END, selected_folder)
+                self.upload_button.config(state='normal')
+        else:
+            messagebox.showinfo("Duplicate Folder", "The selected folder is already in the list.")
+
 
 
 
