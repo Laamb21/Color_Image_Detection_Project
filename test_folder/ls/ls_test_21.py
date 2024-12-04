@@ -127,11 +127,11 @@ class WelcomeFrame(tk.Frame):
         super().__init__(parent, bg='white')
         self.controller = controller
 
-        # Create an inner frame to center content
+        #Frame for Welcome frame content 
         inner_frame = tk.Frame(self, bg='white')
         inner_frame.pack(fill="x")
 
-        # Create "Welcome!" label inside inner_frame
+        #Welcome label
         welcome_label = tk.Label(
             inner_frame, 
             text="Welcome to the Post Scan Output QC Script", 
@@ -140,7 +140,7 @@ class WelcomeFrame(tk.Frame):
         )
         welcome_label.pack(pady=20)  # Reduced top padding
 
-        #Create instructions label inside inner_frame
+        #Instructions text
         instructions_text = tk.Text(
         inner_frame,
         font=("Merriweather", 14),
@@ -166,11 +166,11 @@ class WelcomeFrame(tk.Frame):
         instructions_text.tag_configure("spacing", spacing1=15)
         instructions_text.tag_add("spacing", "1.20", "end")
 
-        # Create a frame for the "Next" button
+        #Frame for next button
         next_button_frame = tk.Frame(self, bg='white')
         next_button_frame.pack(fill='both', expand=False, padx=20, pady=10)
 
-        # Create "Next" button inside next_button_frame
+        #Next button
         self.next_button = tk.Button(
             next_button_frame, 
             text="Next", 
@@ -178,7 +178,7 @@ class WelcomeFrame(tk.Frame):
             fg='white', 
             padx=20, 
             font=("Merriweather", 16, "bold"),
-            command=lambda: controller.show_frame("upload")  # Placeholder for future command
+            command=lambda: controller.show_frame("upload")  
         )
         self.next_button.pack(side='right')
 
@@ -187,10 +187,11 @@ class UploadFrame(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg='white')
         self.controller = controller
+        self.folders = []
 
         #Frame for buttons 
         button_frame = tk.Frame(self, bg="white")
-        button_frame.pack(fill='x')
+        button_frame.pack()
 
         #Select folder button
         selcet_folder_button = tk.Button(
@@ -203,7 +204,59 @@ class UploadFrame(tk.Frame):
             font=("Merriweather", 14, "bold"),
             command=self.upload_folder
         )
-        selcet_folder_button.pack(anchor="n", pady=20, padx=20)
+        selcet_folder_button.grid(row=0, column=0, padx=(10,10), pady=(10,10))
+
+        #Remove selected button
+        remove_selected_button = tk.Button(
+            button_frame, 
+            text="Remove Selected",  
+            bg="#4a90e3", 
+            fg='white', 
+            padx=10, 
+            pady=10, 
+            font=("Merriweather", 14, "bold"),
+            command=self.upload_folder
+        )
+        remove_selected_button.grid(row=0, column=1, padx=(10,10), pady=(10,10))
+
+        #Frame for displaying selected folders 
+        folder_display_frame = tk.Frame(self, bg="white")
+        folder_display_frame.pack(fill="both", expand=True)
+
+        #Label for Selected Folders
+        selected_folders_label = tk.Label(folder_display_frame, text="Selected Folders:", bg="white", font="Merriweahter")
+        selected_folders_label.pack(anchor="w", padx=20)
+
+        #Scrollbar for listbox
+        scrollbar = tk.Scrollbar(folder_display_frame, orient='vertical')
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        #Listbox to display selected folders
+        self.folder_listbox = tk.Listbox(
+            folder_display_frame,
+            selectmode=tk.MULTIPLE,
+            yscrollcommand=scrollbar.set,
+            width=70,
+            height=15
+        )
+        self.folder_listbox.pack(side=tk.LEFT, fill=tk.BOTH, padx=20, pady=20, expand=True)
+        scrollbar.config(command=self.folder_listbox.yview)
+
+        #Frame for nav buttons
+        nav_button_frame = tk.Frame(self, bg="white")
+        nav_button_frame.pack(fill="both")
+
+        #Previous button 
+        prev_button = tk.Button(
+            nav_button_frame,
+            text="Back to Instructions",
+            bg="#4a90e3", 
+            fg='white', 
+            padx=20, 
+            font=("Merriweather", 16, "bold"),
+            command=lambda: controller.show_frame("welcome") 
+        )
+        prev_button.pack(side="left", pady=10)
 
     def upload_folder(self):
         selected_folder = filedialog.askdirectory(title="Select Folder")
@@ -211,7 +264,6 @@ class UploadFrame(tk.Frame):
             if selected_folder not in self.folders:
                 self.folders.append(selected_folder)
                 self.folder_listbox.insert(tk.END, selected_folder)
-                self.upload_button.config(state='normal')
         else:
             messagebox.showinfo("Duplicate Folder", "The selected folder is already in the list.")
 
