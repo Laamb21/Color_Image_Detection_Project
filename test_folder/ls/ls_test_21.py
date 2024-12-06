@@ -98,9 +98,8 @@ class App:
         #Define frame names and corresponding classes
         frame_classes = {
             "welcome": WelcomeFrame,        #Frame for introducing user and displaying instructions
-            "upload": UploadFrame           #Frame for uploading Post Scan Output and Post Scan Raw
-            #"mapping": MappingFrame        #Frame to map JPGs and TIF from Post Scan Raw
-            #"analyze": AnalyzeFrame        #Frame to extract all TIF files from Post Scan Output and corresponding JPGs
+            "upload": UploadFrame           #Frame for selcting Post Scan Output and Post Scan Raw folders
+            #"mapping": MappingFrame        #Frame to prepare files for QC
             #"qc": QCFrame                  #Frame to let user either keep TIF in Post Scan raw or update with corresponding JPG
         }
 
@@ -188,6 +187,19 @@ class UploadFrame(tk.Frame):
         super().__init__(parent, bg='white')
         self.controller = controller
         self.folders = []
+
+        #Frame for instructions label 
+        instructions_frame = tk.Frame(self, bg="white")
+        instructions_frame.pack()
+        
+        #Label for instructions 
+        instructions_label = tk.Label(
+            instructions_frame, 
+            text="Select the Post Scan Output and Post Scan Raw folders", 
+            font=("Merriweather", 18, "bold"), 
+            bg='white'
+        )
+        instructions_label.pack()
 
         #Frame for buttons 
         button_frame = tk.Frame(self, bg="white")
