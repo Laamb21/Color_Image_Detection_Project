@@ -168,7 +168,7 @@ class WelcomeFrame(tk.Frame):
 
         #Frame for next button
         next_button_frame = tk.Frame(self, bg='white')
-        next_button_frame.pack(fill='both', expand=False, padx=20, pady=10)
+        next_button_frame.pack(fill='both', expand=False, padx=20, pady=10, side="bottom")
 
         #Next button
         self.next_button = tk.Button(
@@ -178,9 +178,9 @@ class WelcomeFrame(tk.Frame):
             fg='white', 
             padx=20, 
             font=("Merriweather", 16, "bold"),
-            command=lambda: controller.show_frame("upload")  
+            command=lambda: controller.show_frame("upload"),
         )
-        self.next_button.pack(side='right')
+        self.next_button.pack(side='right', anchor='s')
 
 
 class UploadFrame(tk.Frame):
@@ -194,7 +194,7 @@ class UploadFrame(tk.Frame):
         button_frame.pack()
 
         #Select folder button
-        selcet_folder_button = tk.Button(
+        self.selcet_folder_button = tk.Button(
             button_frame, 
             text="Select Folder",  
             bg="#4a90e3", 
@@ -202,12 +202,12 @@ class UploadFrame(tk.Frame):
             padx=10, 
             pady=10, 
             font=("Merriweather", 14, "bold"),
-            command=self.upload_folder
+            command=self.select_folder
         )
-        selcet_folder_button.grid(row=0, column=0, padx=(10,10), pady=(10,10))
+        self.selcet_folder_button.grid(row=0, column=0, padx=(10,10), pady=(10,10))
 
         #Remove selected button
-        remove_selected_button = tk.Button(
+        self.remove_selected_button = tk.Button(
             button_frame, 
             text="Remove Selected",  
             bg="#4a90e3", 
@@ -215,9 +215,10 @@ class UploadFrame(tk.Frame):
             padx=10, 
             pady=10, 
             font=("Merriweather", 14, "bold"),
-            command=self.upload_folder
+            command=self.remove_folder,
+            state="disabled"
         )
-        remove_selected_button.grid(row=0, column=1, padx=(10,10), pady=(10,10))
+        self.remove_selected_button.grid(row=0, column=1, padx=(10,10), pady=(10,10))
 
         #Frame for displaying selected folders 
         folder_display_frame = tk.Frame(self, bg="white")
@@ -237,7 +238,8 @@ class UploadFrame(tk.Frame):
             selectmode=tk.MULTIPLE,
             yscrollcommand=scrollbar.set,
             width=70,
-            height=15
+            height=15,
+            font=("Merriweather", 12)
         )
         self.folder_listbox.pack(side=tk.LEFT, fill=tk.BOTH, padx=20, pady=20, expand=True)
         scrollbar.config(command=self.folder_listbox.yview)
@@ -256,9 +258,22 @@ class UploadFrame(tk.Frame):
             font=("Merriweather", 16, "bold"),
             command=lambda: controller.show_frame("welcome") 
         )
-        prev_button.pack(side="left", pady=10)
+        prev_button.pack(side="left", pady=10, padx=10)
 
-    def upload_folder(self):
+        #Next button
+        next_button = tk.Button(
+            nav_button_frame, 
+            text="Next", 
+            bg="#4a90e3", 
+            fg='white', 
+            padx=20, 
+            font=("Merriweather", 16, "bold"),
+            command=lambda: controller.show_frame("upload"),
+        )
+        next_button.pack(side='right', pady=10, padx=10)
+        
+
+    def select_folder(self):
         selected_folder = filedialog.askdirectory(title="Select Folder")
         if selected_folder:
             if selected_folder not in self.folders:
@@ -266,7 +281,18 @@ class UploadFrame(tk.Frame):
                 self.folder_listbox.insert(tk.END, selected_folder)
         else:
             messagebox.showinfo("Duplicate Folder", "The selected folder is already in the list.")
+        self.remove_selected_button.config(state="normal")    
 
+    def remove_folder(self):
+        selected_indices = list(self.folder_listbox.curselection())
+        if not selected_indices:
+            return
+        for index in reversed(selected_indices):
+            self.folder_listbox.delete(index)
+            del self.folders[index]
+        #if not self.folders:
+            #self.selcet_folder_button.config(state='disabled')
+        self.remove_selected_button.config(state='disabled')
 
 
 
