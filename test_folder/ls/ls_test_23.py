@@ -97,7 +97,7 @@ class App:
         frame_classes = {
             "welcome": WelcomeFrame,        # Frame for introducing user and displaying instructions
             "upload": UploadFrame,          # Frame for uploading Post Scan Output and Post Scan Raw
-            # "mapping": MappingFrame,      # Add your other frames here
+            "mapping": MappingFrame,        # Add your other frames here
             # "analyze": AnalyzeFrame,
             # "qc": QCFrame
         }
@@ -308,6 +308,12 @@ class UploadFrame(tk.Frame):
             self.next_button.config(state='normal')
         else:
             self.next_button.config(state='disabled')
+
+
+class MappingFrame(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg='white')
+        self.controller = controller
 
 def main():    
     # Initialize and run the GUI
