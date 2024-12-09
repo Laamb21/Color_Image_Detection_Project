@@ -7,6 +7,12 @@ import tkinter as tk
 import os
 from PIL import Image, ImageTk
 from tkinter import filedialog, messagebox
+import pydub
+from pydub import AudioSegment
+from pydub.playback import play
+from pydub.utils import which
+
+AudioSegment.converter = which("ffmpeg")
 
 class App:
     def __init__(self, root):
@@ -278,6 +284,7 @@ class UploadFrame(tk.Frame):
         Opens a dialog to select a folder and validates its name.
         """
         selected_folder = filedialog.askdirectory(title=f"Select '{expected_name}' Folder")
+        #bob_auido = AudioSegment.from_file("C:/Users/liams/ArchScan_Capture_Project/color_image_detection/test_folder/ls/bob_wrong_one_dipshit.wav")
         if selected_folder:
             folder_name = os.path.basename(os.path.normpath(selected_folder))
             if folder_name != expected_name:
