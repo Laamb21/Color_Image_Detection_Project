@@ -6,7 +6,7 @@ Chat code for upload frame
 import tkinter as tk
 import os
 from PIL import Image, ImageTk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 import pydub
 from pydub import AudioSegment
 from pydub.playback import play
@@ -314,6 +314,19 @@ class MappingFrame(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg='white')
         self.controller = controller
+
+        # Create a progress bar
+        self.progress = ttk.Progressbar(self, orient="horizontal", length=300, mode="determinate")
+        self.progress.grid(row=0, column=0, pady=(150, 10))  # Center vertically with some padding
+
+        # Add a label below the progress bar
+        self.progress_label = tk.Label(self, text="Processing...", bg="white", font=("Arial", 12))
+        self.progress_label.grid(row=1, column=0, pady=10)
+
+        # Configure row/column weights to center the widgets
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
 def main():    
     # Initialize and run the GUI
