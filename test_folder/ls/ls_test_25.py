@@ -268,13 +268,19 @@ class TreeViewFrame(tk.Frame):
         style.configure("Custom.Treeview.Heading",
                 font=heading_font)  # Set the font for headings
 
-        # Create a Treeview widget
-        self.tree = ttk.Treeview(self, style="Custom.Treeview")
-        self.tree.pack(fill='both', expand=True, padx=20, pady=10)
+        # Create a container frame for Treeview and Scrollbar
+        tree_container = tk.Frame(self, bg='white')
+        tree_container.pack(fill='both', expand=True, padx=30, pady=10)
 
-        # Add a vertical scrollbar to the treeview
-        vsb = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        # Create a Treeview widget
+        self.tree = ttk.Treeview(tree_container, style="Custom.Treeview")
+        self.tree.pack(side='left', fill='both', expand=True)
+
+        # Add a vertical scrollbar to the Treeview
+        vsb = ttk.Scrollbar(tree_container, orient="vertical", command=self.tree.yview)
         vsb.pack(side='right', fill='y')
+
+        # Configure the Treeview to use the scrollbar
         self.tree.configure(yscrollcommand=vsb.set)
 
         # Define columns
@@ -284,7 +290,7 @@ class TreeViewFrame(tk.Frame):
         self.tree.heading("#0", text="Name", anchor='w')
         self.tree.heading("Type", text="Type", anchor='center')
 
-        # Bind the treeview's item expansion to load subdirectories dynamically
+        # Bind the Treeview's item expansion to load subdirectories dynamically
         self.tree.bind("<<TreeviewOpen>>", self.on_open)
 
     def on_show(self):
@@ -348,6 +354,7 @@ class TreeViewFrame(tk.Frame):
             folder_path = self.node_path_map.get(node)
             if folder_path:
                 self.insert_subdirectories(node, folder_path)
+
 
 def main():    
     # Initialize and run the GUI
