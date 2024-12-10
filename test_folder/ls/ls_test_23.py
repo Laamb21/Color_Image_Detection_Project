@@ -120,6 +120,8 @@ class App:
         if frame:
             frame.tkraise()
             print(f"Switched to frame: {frame_name}")
+            if hasattr(frame, "on_show"):
+                frame.on_show()
         else:
             print(f"Error: Frame '{frame_name}' does not exist.")
 
@@ -298,6 +300,8 @@ class UploadFrame(tk.Frame):
             if expected_name == "Post Scan Raw":
                 # Update the controller with the Post Scan Raw path
                 self.controller.post_scan_raw_folder = selected_folder
+            if expected_name == "Post Scan Output":
+                self.controller.post_scan_output_folder = selected_folder
 
     def clear_folder(self, label_var):
         """
@@ -335,6 +339,37 @@ class MappingFrame(tk.Frame):
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
+    def on_show(self):
+        self.start_mapping()
+
+    def start_mapping(self):
+        tiff_dir = self.controller.post_scan_raw_folder
+        if not tiff_dir:
+            messagebox.showerror("Error", "Post Scan Raw folder is not selected.")
+            self.controller.show_frame("upload")
+            return
+        try:
+            # Display progress and update label
+            self.progress_label.config(text="Processing mapping...")
+            self.progress.start(10)
+
+            # Assuming build_tiff_mapping is a time-consuming process, consider running it in a separate thread
+            # to keep the UI responsive. Here's a simple synchronous approach:
+            tiff_mapping = build_tiff_mapping(tiff_dir)
+
+            # Stop progress bar and update label with results
+            self.progress.stop()
+            self.progress_label.config(text="Mapping completed successfully.")
+
+            # Debugging or further use
+            print("TIFF Mapping created:", tiff_mapping)
+        except Exception as e:
+            # Stop progress bar and show error message
+            self.progress.stop()
+            self.progress_label.config(text="Error occurred during mapping.")
+            messagebox.showerror("Error", f"An error occurred during mapping: {str(e)}")
+
+    '''
     def tkraise(self, *args, **kwargs):
         """
         Override tkraise to initiate the mapping process automatically.
@@ -348,7 +383,7 @@ class MappingFrame(tk.Frame):
         """
         Start the process of mapping TIFFs to JPGs.
         """
-        tiff_dir = self.controller.post_scan_raw_folder.get()  # Path for TIFF folder
+        tiff_dir = self.controller.post_scan_raw_folder  # Path for TIFF folder
         try:
             # Display progress and update label
             self.progress_label.config(text="Processing mapping...")
@@ -366,7 +401,9 @@ class MappingFrame(tk.Frame):
             # Stop progress bar and show error message
             self.progress.stop()
             self.progress_label.config(text="Error occurred during mapping.")
-            messagebox.showerror("Error", f"An error occurred during mapping: {str(e)}")    
+            messagebox.showerror("Error", f"An error occurred during mapping: {str(e)}")   
+    '''
+     
 def main():    
     # Initialize and run the GUI
     root = tk.Tk()
