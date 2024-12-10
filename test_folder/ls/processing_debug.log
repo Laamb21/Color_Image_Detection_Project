@@ -2,3 +2,145 @@
 2024-12-10 11:29:45,399 - INFO - Found 0 valid TIFF files in 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw'.
 2024-12-10 11:32:31,942 - INFO - Found 0 valid TIFF files in 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw'.
 2024-12-10 11:36:21,517 - INFO - Found 0 valid TIFF files in 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw'.
+2024-12-10 12:30:45,747 - INFO - Found 0 valid TIFF files in 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw'.
+2024-12-10 12:33:49,767 - ERROR - Error building TIFF mapping: [WinError 3] The system cannot find the path specified: 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw\\TIF'
+2024-12-10 12:33:49,767 - ERROR - Error building TIFF mapping: [WinError 3] The system cannot find the path specified: 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw\\TIF'
+2024-12-10 12:33:49,769 - ERROR - An unexpected error occurred during processing: [WinError 3] The system cannot find the path specified: 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw\\TIF'
+2024-12-10 12:33:49,769 - ERROR - An unexpected error occurred during processing: [WinError 3] The system cannot find the path specified: 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw\\TIF'
+2024-12-10 12:34:27,596 - INFO - Found 33 valid TIFF files in 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw/PZ-SF-001/KQ-PZ-0001\TIF'.
+2024-12-10 12:34:27,596 - INFO - Found 33 valid TIFF files in 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw/PZ-SF-001/KQ-PZ-0001\TIF'.
+2024-12-10 12:34:27,597 - INFO - Mapping ('1', '0002') to 10000002.tif
+2024-12-10 12:34:27,597 - INFO - Mapping ('1', '0002') to 10000002.tif
+2024-12-10 12:34:27,597 - INFO - Mapping ('1', '0003') to 10000003.tif
+2024-12-10 12:34:27,597 - INFO - Mapping ('1', '0003') to 10000003.tif
+2024-12-10 12:34:27,597 - INFO - Mapping ('1', '0004') to 10000004.tif
+2024-12-10 12:34:27,597 - INFO - Mapping ('1', '0004') to 10000004.tif
+2024-12-10 12:34:27,598 - INFO - Mapping ('1', '0005') to 10000005.tif
+2024-12-10 12:34:27,598 - INFO - Mapping ('1', '0005') to 10000005.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0006') to 10000006.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0006') to 10000006.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0007') to 10000007.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0007') to 10000007.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0008') to 10000008.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0008') to 10000008.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0009') to 10000009.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0009') to 10000009.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0010') to 10000010.tif
+2024-12-10 12:34:27,599 - INFO - Mapping ('1', '0010') to 10000010.tif
+2024-12-10 12:34:27,600 - INFO - Mapping ('1', '0011') to 10000011.tif
+2024-12-10 12:34:27,600 - INFO - Mapping ('1', '0011') to 10000011.tif
+2024-12-10 12:34:27,600 - INFO - Mapping ('1', '0012') to 10000012.tif
+2024-12-10 12:34:27,600 - INFO - Mapping ('1', '0012') to 10000012.tif
+2024-12-10 12:34:27,600 - INFO - Mapping ('1', '0013') to 10000013.tif
+2024-12-10 12:34:27,600 - INFO - Mapping ('1', '0013') to 10000013.tif
+2024-12-10 12:34:27,601 - INFO - Mapping ('1', '0014') to 10000014.tif
+2024-12-10 12:34:27,601 - INFO - Mapping ('1', '0014') to 10000014.tif
+2024-12-10 12:34:27,601 - INFO - Mapping ('1', '0015') to 10000015.tif
+2024-12-10 12:34:27,601 - INFO - Mapping ('1', '0015') to 10000015.tif
+2024-12-10 12:34:27,601 - INFO - Mapping ('1', '0016') to 10000016.tif
+2024-12-10 12:34:27,601 - INFO - Mapping ('1', '0016') to 10000016.tif
+2024-12-10 12:34:27,602 - INFO - Mapping ('1', '0017') to 10000017.tif
+2024-12-10 12:34:27,602 - INFO - Mapping ('1', '0017') to 10000017.tif
+2024-12-10 12:34:27,602 - INFO - Mapping ('1', '0018') to 10000018.tif
+2024-12-10 12:34:27,602 - INFO - Mapping ('1', '0018') to 10000018.tif
+2024-12-10 12:34:27,604 - INFO - Mapping ('1', '0019') to 10000019.tif
+2024-12-10 12:34:27,604 - INFO - Mapping ('1', '0019') to 10000019.tif
+2024-12-10 12:34:27,604 - INFO - Mapping ('1', '0020') to 10000020.tif
+2024-12-10 12:34:27,604 - INFO - Mapping ('1', '0020') to 10000020.tif
+2024-12-10 12:34:27,604 - INFO - Mapping ('1', '0021') to 10000021.tif
+2024-12-10 12:34:27,604 - INFO - Mapping ('1', '0021') to 10000021.tif
+2024-12-10 12:34:27,604 - INFO - Mapping ('1', '0022') to 10000022.tif
+2024-12-10 12:34:27,604 - INFO - Mapping ('1', '0022') to 10000022.tif
+2024-12-10 12:34:27,613 - INFO - Mapping ('1', '0023') to 10000023.tif
+2024-12-10 12:34:27,613 - INFO - Mapping ('1', '0023') to 10000023.tif
+2024-12-10 12:34:27,613 - INFO - Mapping ('1', '0024') to 10000024.tif
+2024-12-10 12:34:27,613 - INFO - Mapping ('1', '0024') to 10000024.tif
+2024-12-10 12:34:27,614 - INFO - Mapping ('1', '0025') to 10000025.tif
+2024-12-10 12:34:27,614 - INFO - Mapping ('1', '0025') to 10000025.tif
+2024-12-10 12:34:27,614 - INFO - Mapping ('1', '0026') to 10000026.tif
+2024-12-10 12:34:27,614 - INFO - Mapping ('1', '0026') to 10000026.tif
+2024-12-10 12:34:27,614 - INFO - Mapping ('1', '0027') to 10000027.tif
+2024-12-10 12:34:27,614 - INFO - Mapping ('1', '0027') to 10000027.tif
+2024-12-10 12:34:27,614 - INFO - Mapping ('1', '0028') to 10000028.tif
+2024-12-10 12:34:27,614 - INFO - Mapping ('1', '0028') to 10000028.tif
+2024-12-10 12:34:27,616 - INFO - Mapping ('1', '0029') to 10000029.tif
+2024-12-10 12:34:27,616 - INFO - Mapping ('1', '0029') to 10000029.tif
+2024-12-10 12:34:27,616 - INFO - Mapping ('1', '0030') to 10000030.tif
+2024-12-10 12:34:27,616 - INFO - Mapping ('1', '0030') to 10000030.tif
+2024-12-10 12:34:27,616 - INFO - Mapping ('1', '0031') to 10000031.tif
+2024-12-10 12:34:27,616 - INFO - Mapping ('1', '0031') to 10000031.tif
+2024-12-10 12:34:27,617 - INFO - Mapping ('1', '0032') to 10000032.tif
+2024-12-10 12:34:27,617 - INFO - Mapping ('1', '0032') to 10000032.tif
+2024-12-10 12:34:27,617 - INFO - Mapping ('2', '0003') to 20000003.tif
+2024-12-10 12:34:27,617 - INFO - Mapping ('2', '0003') to 20000003.tif
+2024-12-10 12:34:27,618 - INFO - Mapping ('2', '0005') to 20000005.tif
+2024-12-10 12:34:27,618 - INFO - Mapping ('2', '0005') to 20000005.tif
+2024-12-10 12:34:27,664 - INFO - Document: 10000002, Gray_Percentage: 3.28, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:27,664 - INFO - Document: 10000002, Gray_Percentage: 3.28, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:27,700 - INFO - Document: 11000003, Gray_Percentage: 21.59, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,700 - INFO - Document: 11000003, Gray_Percentage: 21.59, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,738 - INFO - Document: 11000004, Gray_Percentage: 19.09, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,738 - INFO - Document: 11000004, Gray_Percentage: 19.09, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,787 - INFO - Document: 11000005, Gray_Percentage: 31.23, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,787 - INFO - Document: 11000005, Gray_Percentage: 31.23, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,821 - INFO - Document: 10000006, Gray_Percentage: 9.10, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:27,821 - INFO - Document: 10000006, Gray_Percentage: 9.10, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:27,858 - INFO - Document: 11000007, Gray_Percentage: 19.44, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,858 - INFO - Document: 11000007, Gray_Percentage: 19.44, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,896 - INFO - Document: 11000008, Gray_Percentage: 19.17, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,896 - INFO - Document: 11000008, Gray_Percentage: 19.17, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:27,931 - INFO - Document: 10000009, Gray_Percentage: 14.52, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:27,931 - INFO - Document: 10000009, Gray_Percentage: 14.52, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:27,966 - INFO - Document: 10000010, Gray_Percentage: 14.50, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:27,966 - INFO - Document: 10000010, Gray_Percentage: 14.50, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,001 - INFO - Document: 10000011, Gray_Percentage: 12.96, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,001 - INFO - Document: 10000011, Gray_Percentage: 12.96, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,031 - INFO - Document: 10000012, Gray_Percentage: 2.35, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,031 - INFO - Document: 10000012, Gray_Percentage: 2.35, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,066 - INFO - Document: 11000013, Gray_Percentage: 15.47, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,066 - INFO - Document: 11000013, Gray_Percentage: 15.47, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,103 - INFO - Document: 10000014, Gray_Percentage: 14.94, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,103 - INFO - Document: 10000014, Gray_Percentage: 14.94, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,133 - INFO - Document: 10000015, Gray_Percentage: 1.57, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,133 - INFO - Document: 10000015, Gray_Percentage: 1.57, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,169 - INFO - Document: 10000016, Gray_Percentage: 14.32, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,169 - INFO - Document: 10000016, Gray_Percentage: 14.32, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,203 - INFO - Document: 10000017, Gray_Percentage: 11.57, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,203 - INFO - Document: 10000017, Gray_Percentage: 11.57, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,237 - INFO - Document: 10000018, Gray_Percentage: 11.25, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,237 - INFO - Document: 10000018, Gray_Percentage: 11.25, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,272 - INFO - Document: 10000019, Gray_Percentage: 12.07, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,272 - INFO - Document: 10000019, Gray_Percentage: 12.07, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,318 - INFO - Document: 10000020, Gray_Percentage: 11.55, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,318 - INFO - Document: 10000020, Gray_Percentage: 11.55, Selected_Format: TIF (Intermediate), Flagged: Yes
+2024-12-10 12:34:28,354 - INFO - Document: 11000021, Gray_Percentage: 15.19, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,354 - INFO - Document: 11000021, Gray_Percentage: 15.19, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,392 - INFO - Document: 11000022, Gray_Percentage: 16.77, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,392 - INFO - Document: 11000022, Gray_Percentage: 16.77, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,425 - INFO - Document: 10000023, Gray_Percentage: 6.79, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,425 - INFO - Document: 10000023, Gray_Percentage: 6.79, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,465 - INFO - Document: 11000024, Gray_Percentage: 20.79, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,465 - INFO - Document: 11000024, Gray_Percentage: 20.79, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,503 - INFO - Document: 11000025, Gray_Percentage: 15.10, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,503 - INFO - Document: 11000025, Gray_Percentage: 15.10, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,546 - INFO - Document: 11000026, Gray_Percentage: 16.84, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,546 - INFO - Document: 11000026, Gray_Percentage: 16.84, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,579 - INFO - Document: 10000027, Gray_Percentage: 6.78, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,579 - INFO - Document: 10000027, Gray_Percentage: 6.78, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,619 - INFO - Document: 11000028, Gray_Percentage: 20.63, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,619 - INFO - Document: 11000028, Gray_Percentage: 20.63, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,657 - INFO - Document: 11000029, Gray_Percentage: 15.17, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,657 - INFO - Document: 11000029, Gray_Percentage: 15.17, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,694 - INFO - Document: 11000030, Gray_Percentage: 16.72, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,694 - INFO - Document: 11000030, Gray_Percentage: 16.72, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:28,727 - INFO - Document: 10000031, Gray_Percentage: 6.75, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:28,727 - INFO - Document: 10000031, Gray_Percentage: 6.75, Selected_Format: TIFF, Flagged: No
+2024-12-10 12:34:31,703 - INFO - Document: 11000032, Gray_Percentage: 20.59, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:31,703 - INFO - Document: 11000032, Gray_Percentage: 20.59, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:31,741 - INFO - Document: 21000003, Gray_Percentage: 24.37, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:31,741 - INFO - Document: 21000003, Gray_Percentage: 24.37, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:31,790 - INFO - Document: 21000005, Gray_Percentage: 24.35, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:31,790 - INFO - Document: 21000005, Gray_Percentage: 24.35, Selected_Format: JPG, Flagged: No
+2024-12-10 12:34:31,790 - INFO - Processing complete.
+2024-12-10 12:34:31,790 - INFO - Processing complete.
+2024-12-10 12:35:33,099 - INFO - Found 0 valid TIFF files in 'D:/Mapping_test/King and Queen Delivery 2 Test Data/Post Scan Raw'.
