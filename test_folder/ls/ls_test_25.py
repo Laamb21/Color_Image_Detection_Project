@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import os
 from PIL import Image, ImageTk
+import tkinter.font as tkFont
 
 class App:
     def __init__(self, root):
@@ -252,8 +253,23 @@ class TreeViewFrame(tk.Frame):
         header_label = tk.Label(self, text="Directory Structure", font=("Merriweather", 16, "bold"), bg='white')
         header_label.pack(pady=10)
 
+        # Define custom fonts
+        item_font = tkFont.Font(family="Merriweather", size=12, weight="bold")
+        heading_font = tkFont.Font(family="Merriweather", size=14, weight="bold")
+
+        # Configure Treeview style
+        style = ttk.Style()
+        style.theme_use("default")
+
+        style.configure("Custom.Treeview",
+                        font=item_font,  # Set the font for Treeview items
+                        rowheight=25)    # Optional: set row height
+
+        style.configure("Custom.Treeview.Heading",
+                font=heading_font)  # Set the font for headings
+
         # Create a Treeview widget
-        self.tree = ttk.Treeview(self)
+        self.tree = ttk.Treeview(self, style="Custom.Treeview")
         self.tree.pack(fill='both', expand=True, padx=20, pady=10)
 
         # Add a vertical scrollbar to the treeview
