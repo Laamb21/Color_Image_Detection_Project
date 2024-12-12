@@ -4,6 +4,18 @@ import os
 from PIL import Image, ImageTk
 import tkinter.font as tkFont
 
+def has_subdirectories(path):
+        """
+        Checks if the given directory path contains any subdirectories.
+        Returns True if at least one subdirectory is found, False otherwise.
+        """
+        try:
+            with os.scandir(path) as entries:
+                return any(entry.is_dir() for entry in entries)
+        except (PermissionError, FileNotFoundError) as e:
+            print(f"Cannot access {path}: {e}")
+            return False
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -318,18 +330,26 @@ class TreeViewFrame(tk.Frame):
 
     def insert_subdirectories(self, parent, path):
         """
-        Inserts subdirectories into the tree. Adds a dummy child to make the node expandable.
+        Inserts subdirectories into the tree. Adds a dummy child only if the directory contains subdirectories.
         """
         try:
             # Sort entries: directories first, then files
             entries = sorted(os.scandir(path), key=lambda e: (not e.is_dir(), e.name.lower()))
             for entry in entries:
                 if entry.is_dir():
-                    node = self.tree.insert(parent, "end", text=entry.name, values=("Folder"), open=False)
-                    # Map the node to its full path
-                    self.node_path_map[node] = entry.path
-                    # Insert a dummy child to make the node expandable
-                    self.tree.insert(node, "end")  # Dummy child
+                    # Check if this directory has any subdirectories
+                    if has_subdirectories(entry.path):
+                        # Insert the directory node
+                        node = self.tree.insert(parent, "end", text=entry.name, values=("Folder"), open=False)
+                        # Map the node to its full path
+                        self.node_path_map[node] = entry.path
+                        # Insert a dummy child to make the node expandable
+                        self.tree.insert(node, "end")  # Dummy child
+                    else:
+                        # Insert the directory node without a dummy child
+                        node = self.tree.insert(parent, "end", text=entry.name, values=("Folder"), open=False)
+                        # Map the node to its full path
+                        self.node_path_map[node] = entry.path
         except PermissionError:
             # Skip directories for which the user does not have permissions
             print(f"Permission denied: {path}")
@@ -354,6 +374,10 @@ class TreeViewFrame(tk.Frame):
             folder_path = self.node_path_map.get(node)
             if folder_path:
                 self.insert_subdirectories(node, folder_path)
+
+    
+
+
 
 
 def main():    
