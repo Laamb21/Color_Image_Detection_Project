@@ -5,16 +5,16 @@ from PIL import Image, ImageTk
 import tkinter.font as tkFont
 
 def has_subdirectories(path):
-        """
-        Checks if the given directory path contains any subdirectories.
-        Returns True if at least one subdirectory is found, False otherwise.
-        """
-        try:
-            with os.scandir(path) as entries:
-                return any(entry.is_dir() for entry in entries)
-        except (PermissionError, FileNotFoundError) as e:
-            print(f"Cannot access {path}: {e}")
-            return False
+    """
+    Checks if the given directory path contains any subdirectories.
+    Returns True if at least one subdirectory is found, False otherwise.
+    """
+    try:
+        with os.scandir(path) as entries:
+            return any(entry.is_dir() for entry in entries)
+    except (PermissionError, FileNotFoundError) as e:
+        print(f"Cannot access {path}: {e}")
+        return False
 
 class App:
     def __init__(self, root):
@@ -305,6 +305,26 @@ class TreeViewFrame(tk.Frame):
         # Bind the Treeview's item expansion to load subdirectories dynamically
         self.tree.bind("<<TreeviewOpen>>", self.on_open)
 
+        # Bind the selection event to handle button state
+        self.tree.bind("<<TreeviewSelect>>", self.on_selection)
+
+        # Create a frame for the button at the bottom
+        button_frame = tk.Frame(self, bg='white')
+        button_frame.pack(fill='x', padx=30, pady=10)
+
+        # Add the button, initially disabled
+        self.box_button = tk.Button(
+            button_frame,
+            text="Process Selected Box",  # Placeholder text
+            bg="#4a90e3",
+            fg='white',
+            padx=20,
+            font=("Merriweather", 14, "bold"),
+            command=self.process_box,  # Placeholder command
+            state='disabled'  # Initially disabled
+        )
+        self.box_button.pack(side='right')
+
     def on_show(self):
         self.populate_tree()
 
@@ -326,6 +346,9 @@ class TreeViewFrame(tk.Frame):
         root_node = self.tree.insert("", "end", text=os.path.basename(folder_path), values=("Folder"), open=False)
         # Map the root node to its full path
         self.node_path_map[root_node] = folder_path
+        # Store the root node ID for reference
+        self.root_node = root_node
+        # Insert subdirectories
         self.insert_subdirectories(root_node, folder_path)
 
     def insert_subdirectories(self, parent, path):
@@ -375,10 +398,36 @@ class TreeViewFrame(tk.Frame):
             if folder_path:
                 self.insert_subdirectories(node, folder_path)
 
-    
+    def on_selection(self, event):
+        """
+        Callback function when a tree item is selected. Enables the button if a Box is selected.
+        """
+        selected_node = self.tree.focus()
+        if not selected_node:
+            self.box_button.config(state='disabled')
+            return
 
+        parent_node = self.tree.parent(selected_node)
 
+        # Check if the parent node is the root node
+        if parent_node == self.root_node:
+            # It's a Box
+            self.box_button.config(state='normal')
+        else:
+            # Not a Box
+            self.box_button.config(state='disabled')
 
+    def process_box(self):
+        """
+        Placeholder function for button action. To be implemented later.
+        """
+        selected_node = self.tree.focus()
+        box_path = self.node_path_map.get(selected_node)
+        if box_path:
+            messagebox.showinfo("Box Selected", f"You have selected the Box:\n{box_path}")
+            # Future implementation: Add the actual processing logic here
+        else:
+            messagebox.showerror("Error", "No Box selected.")
 
 def main():    
     # Initialize and run the GUI
