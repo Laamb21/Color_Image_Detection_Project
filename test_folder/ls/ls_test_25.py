@@ -128,7 +128,7 @@ class UploadFrame(tk.Frame):
 
         # Initialize variables to store folder paths
         self.post_scan_output_path = tk.StringVar()
-        # self.post_scan_raw_path = tk.StringVar()  # Uncomment if using
+        self.post_scan_raw_path = tk.StringVar()  
 
         # Frame for "Post Scan Output"
         output_frame = tk.LabelFrame(self, text="Post Scan Output", bg='white', font=("Merriweather", 14, "bold"))
@@ -140,8 +140,6 @@ class UploadFrame(tk.Frame):
             expected_name="Post Scan Output"
         )
 
-        # If you need to select "Post Scan Raw", uncomment the following lines
-        """
         raw_frame = tk.LabelFrame(self, text="Post Scan Raw", bg='white', font=("Merriweather", 14, "bold"))
         raw_frame.pack(fill="x", padx=20, pady=(10, 20))
 
@@ -150,7 +148,7 @@ class UploadFrame(tk.Frame):
             label_var=self.post_scan_raw_path,
             expected_name="Post Scan Raw"
         )
-        """
+        
 
         # Frame for navigation buttons
         nav_button_frame = tk.Frame(self, bg="white")
@@ -169,9 +167,8 @@ class UploadFrame(tk.Frame):
         )
         self.next_button.pack(side="right", pady=10)
 
-        # If you have multiple folders, adjust the trace accordingly
         self.post_scan_output_path.trace_add('write', self.check_folders_selected)
-        # self.post_scan_raw_path.trace_add('write', self.check_folders_selected)  # Uncomment if using
+        self.post_scan_raw_path.trace_add('write', self.check_folders_selected)  # Uncomment if using
 
     def create_folder_selection(self, parent, label_var, expected_name):
         """
