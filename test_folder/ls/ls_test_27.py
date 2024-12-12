@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 import tkinter.font as tkFont
 import shutil
 import threading
+import queue
 
 def has_subdirectories(path):
     """
@@ -22,7 +23,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Post Scan Output QC")
-        self.root.geometry("1200x800")  # Adjusted size for better UI
+        self.root.geometry("1400x900")  # Adjusted size for better UI
 
         # Initialize variables 
         self.post_scan_output_folder = None
@@ -441,9 +442,6 @@ class TreeViewFrame(tk.Frame):
             messagebox.showerror("Error", f"Corresponding Box in Post Scan Raw not found:\n{box_path_raw}")
             return
 
-        # Optional: You can add processing logic here before navigating to QCFrame
-        # For example, verifying mappings or preparing data
-
         # Navigate to QCFrame, passing the Box paths
         self.controller.show_frame("qc", box_path_output=box_path_output, box_path_raw=box_path_raw, box_name=box_name)
 
@@ -490,10 +488,25 @@ class QCFrame(tk.Frame):
         )
         back_button.pack(pady=10)
 
+        # Loading indicator
+        self.loading_frame = tk.Frame(self.scrollable_frame, bg='white')
+        self.loading_label = tk.Label(self.loading_frame, text="Loading TIF and JPG files...", font=("Merriweather", 14), bg='white')
+        self.loading_label.pack(pady=10)
+        self.progress_bar = ttk.Progressbar(self.loading_frame, mode='indeterminate')
+        self.progress_bar.pack(pady=10)
+        self.loading_frame.grid(row=0, column=0, columnspan=4, pady=20)
+
+        # Initialize queue and threading
+        self.queue = queue.Queue()
+        self.thread = None
+
         # Store the Box paths
         self.box_path_output = None
         self.box_path_raw = None
         self.box_name = None
+
+        # To keep references to PhotoImage objects to prevent garbage collection
+        self.photo_images = []
 
     def on_show(self, box_path_output, box_path_raw, box_name):
         """
@@ -503,68 +516,188 @@ class QCFrame(tk.Frame):
         self.box_path_raw = box_path_raw
         self.box_name = box_name
 
-        # Clear any existing widgets in the scrollable frame
+        # Clear any existing widgets in the scrollable frame except the loading frame
         for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
+            if widget != self.loading_frame:
+                widget.destroy()
 
-        # Header for the Box
-        box_header = tk.Label(self.scrollable_frame, text=f"Box: {self.box_name}", font=("Merriweather", 14, "bold"), bg='white')
-        box_header.grid(row=0, column=0, columnspan=4, pady=(10, 20))
+        # Show the loading indicator
+        self.loading_frame.grid(row=0, column=0, columnspan=4, pady=20)
+        self.progress_bar.start(10)  # Start the indeterminate progress bar
 
-        # Initialize row counter
-        row_counter = 1
+        # Start the worker thread to load TIF and JPG files
+        self.thread = threading.Thread(target=self.load_files, daemon=True)
+        self.thread.start()
 
-        # Iterate through each Folder within the Box
-        folders = self.get_folders(self.box_path_output)
-        if not folders:
-            tk.Label(self.scrollable_frame, text="No Folders found in this Box.", bg='white').grid(row=row_counter, column=0, pady=10)
+        # Start checking the queue
+        self.after(100, self.process_queue)
+
+    def load_files(self):
+        """
+        Worker thread function to load TIF and JPG file paths and enqueue them as pairs.
+        """
+        folders_output = self.get_folders(self.box_path_output)
+        if not folders_output:
+            self.queue.put(("error", f"No Folders found in Box: {self.box_name}"))
             return
 
-        for folder in folders:
-            folder_name = os.path.basename(os.path.normpath(folder))
-            tk.Label(self.scrollable_frame, text=f"Folder: {folder_name}", font=("Merriweather", 12, "bold"), bg='white').grid(row=row_counter, column=0, columnspan=4, pady=(10, 5), sticky='w')
-            row_counter += 1
-
-            # Get TIF files in the Folder
-            tif_files = self.get_tif_files(folder)
+        for folder_output in folders_output:
+            folder_name = os.path.basename(os.path.normpath(folder_output))
+            tif_files = self.get_tif_files(folder_output)
             if not tif_files:
-                tk.Label(self.scrollable_frame, text="No TIF files found in this Folder.", bg='white').grid(row=row_counter, column=0, columnspan=4, pady=5, sticky='w')
-                row_counter += 1
+                self.queue.put(("message", f"No TIF files found in Folder: {folder_name}"))
                 continue
 
-            # Display TIF files in a grid
-            col_counter = 0
+            # Build a mapping from last four digits to JPG files in the corresponding Raw Folder
+            folder_raw = os.path.join(self.box_path_raw, folder_name)
+            if not os.path.isdir(folder_raw):
+                self.queue.put(("error", f"Corresponding Raw Folder not found: {folder_raw}"))
+                continue
+
+            jpg_files = self.get_jpg_files(folder_raw)
+            jpg_mapping = self.build_jpg_mapping(jpg_files)
+
             for tif in tif_files:
-                tif_path = os.path.join(folder, tif)
-                try:
-                    img = Image.open(tif_path)
-                    img.thumbnail((150, 150))
-                    photo = ImageTk.PhotoImage(img)
-                except Exception as e:
-                    print(f"Error loading image {tif_path}: {e}")
-                    photo = None
+                tif_path = os.path.join(folder_output, tif)
+                last_four = self.extract_last_four_digits(tif)
+                if not last_four:
+                    self.queue.put(("message", f"Could not extract last four digits from TIF: {tif}"))
+                    self.queue.put(("pair", (tif_path, None)))
+                    continue
 
-                if photo:
-                    img_label = tk.Label(self.scrollable_frame, image=photo, bg='white')
-                    img_label.image = photo  # Keep a reference to prevent garbage collection
-                    img_label.grid(row=row_counter, column=col_counter, padx=10, pady=10)
-                    
-                    # Filename label
-                    filename_label = tk.Label(self.scrollable_frame, text=tif, bg='white')
-                    filename_label.grid(row=row_counter+1, column=col_counter, padx=10, pady=(0, 10))
-
+                corresponding_jpg = jpg_mapping.get(last_four, None)
+                if corresponding_jpg:
+                    jpg_path = os.path.join(folder_raw, corresponding_jpg)
                 else:
-                    error_label = tk.Label(self.scrollable_frame, text=f"Failed to load {tif}", bg='white', fg='red')
-                    error_label.grid(row=row_counter, column=col_counter, padx=10, pady=10)
+                    jpg_path = None
 
-                col_counter += 1
-                if col_counter >= 4:  # 4 images per row
-                    col_counter = 0
-                    row_counter += 2  # Move to next set of rows
+                self.queue.put(("pair", (tif_path, jpg_path)))
 
-            # If there are leftover images not filling the entire row
-            if col_counter != 0:
-                row_counter += 2
+        # Indicate that loading is complete
+        self.queue.put(("done", None))
+
+    def process_queue(self):
+        """
+        Processes items in the queue. Should be called periodically using `after`.
+        """
+        try:
+            while True:
+                item = self.queue.get_nowait()
+                if item[0] == "pair":
+                    tif_path, jpg_path = item[1]
+                    self.display_pair(tif_path, jpg_path)
+                elif item[0] == "message":
+                    message = item[1]
+                    self.display_message(message)
+                elif item[0] == "error":
+                    error_msg = item[1]
+                    self.display_error(error_msg)
+                elif item[0] == "done":
+                    self.loading_frame.grid_remove()
+                    self.progress_bar.stop()
+        except queue.Empty:
+            pass
+        finally:
+            if self.thread.is_alive() or not self.queue.empty():
+                self.after(100, self.process_queue)  # Continue checking the queue
+            else:
+                # Loading complete
+                self.loading_frame.grid_remove()
+                self.progress_bar.stop()
+
+    def display_pair(self, tif_path, jpg_path):
+        """
+        Displays a pair of TIF and corresponding JPG files side by side in the grid.
+        """
+        folder_name = os.path.basename(os.path.dirname(tif_path))
+        tif_name = os.path.basename(tif_path)
+        jpg_name = os.path.basename(jpg_path) if jpg_path else "No Corresponding JPG"
+
+        # If it's the first pair in a Folder, add a Folder label
+        if not hasattr(self, 'current_folder') or self.current_folder != folder_name:
+            self.current_folder = folder_name
+            folder_label = tk.Label(self.scrollable_frame, text=f"Folder: {folder_name}", font=("Merriweather", 12, "bold"), bg='white')
+            folder_label.grid(row=self.get_next_row(), column=0, columnspan=4, pady=(10, 5), sticky='w')
+
+        row = self.get_next_row()
+
+        # Load and create thumbnails for TIF
+        try:
+            img_tif = Image.open(tif_path)
+            img_tif.thumbnail((300, 300))
+            photo_tif = ImageTk.PhotoImage(img_tif)
+        except Exception as e:
+            print(f"Error loading image {tif_path}: {e}")
+            photo_tif = None
+
+        # Load and create thumbnails for JPG
+        if jpg_path and os.path.isfile(jpg_path):
+            try:
+                img_jpg = Image.open(jpg_path)
+                img_jpg.thumbnail((300, 300))
+                photo_jpg = ImageTk.PhotoImage(img_jpg)
+            except Exception as e:
+                print(f"Error loading image {jpg_path}: {e}")
+                photo_jpg = None
+        else:
+            photo_jpg = None
+
+        # Display TIF Image
+        if photo_tif:
+            tif_label = tk.Label(self.scrollable_frame, image=photo_tif, bg='white')
+            tif_label.image = photo_tif  # Keep a reference
+            tif_label.grid(row=row, column=0, padx=10, pady=10)
+
+            # Filename label for TIF
+            tif_filename_label = tk.Label(self.scrollable_frame, text=tif_name, bg='white')
+            tif_filename_label.grid(row=row+1, column=0, padx=10, pady=(0, 10))
+        else:
+            tif_error_label = tk.Label(self.scrollable_frame, text=f"Failed to load {tif_name}", bg='white', fg='red')
+            tif_error_label.grid(row=row, column=0, padx=10, pady=10)
+
+        # Display JPG Image
+        if photo_jpg:
+            jpg_label = tk.Label(self.scrollable_frame, image=photo_jpg, bg='white')
+            jpg_label.image = photo_jpg  # Keep a reference
+            jpg_label.grid(row=row, column=1, padx=10, pady=10)
+
+            # Filename label for JPG
+            jpg_filename_label = tk.Label(self.scrollable_frame, text=jpg_name, bg='white')
+            jpg_filename_label.grid(row=row+1, column=1, padx=10, pady=(0, 10))
+        else:
+            jpg_error_label = tk.Label(self.scrollable_frame, text="No Corresponding JPG", bg='white', fg='orange')
+            jpg_error_label.grid(row=row, column=1, padx=10, pady=10)
+
+        # Optionally, you can add more columns for additional images or information
+
+        # Keep a reference to PhotoImage objects to prevent garbage collection
+        if photo_tif:
+            self.photo_images.append(photo_tif)
+        if photo_jpg:
+            self.photo_images.append(photo_jpg)
+
+    def display_message(self, message):
+        """
+        Displays informational messages in the scrollable frame.
+        """
+        row = self.get_next_row()
+        msg_label = tk.Label(self.scrollable_frame, text=message, bg='white', fg='blue')
+        msg_label.grid(row=row, column=0, columnspan=4, pady=5, sticky='w')
+
+    def display_error(self, error_msg):
+        """
+        Displays error messages in the scrollable frame.
+        """
+        row = self.get_next_row()
+        error_label = tk.Label(self.scrollable_frame, text=error_msg, bg='white', fg='red')
+        error_label.grid(row=row, column=0, columnspan=4, pady=5, sticky='w')
+
+    def get_next_row(self):
+        """
+        Determines the next available row in the grid.
+        """
+        current_rows = self.scrollable_frame.grid_size()[1]
+        return current_rows
 
     def get_folders(self, box_path_output):
         """
@@ -574,7 +707,7 @@ class QCFrame(tk.Frame):
             return [os.path.join(box_path_output, d) for d in os.listdir(box_path_output)
                     if os.path.isdir(os.path.join(box_path_output, d))]
         except Exception as e:
-            messagebox.showerror("Error", f"Error accessing folders in Box: {box_path_output}: {e}")
+            self.show_error(f"Error accessing folders in Box: {box_path_output}: {e}")
             return []
 
     def get_tif_files(self, folder_path):
@@ -586,6 +719,37 @@ class QCFrame(tk.Frame):
         except Exception as e:
             self.show_error(f"Error accessing TIF files in Folder: {folder_path}: {e}")
             return []
+
+    def get_jpg_files(self, folder_path):
+        """
+        Retrieves all JPG files within a Folder in Post Scan Raw.
+        """
+        try:
+            return [f for f in os.listdir(folder_path) if f.lower().endswith('.jpg')]
+        except Exception as e:
+            self.show_error(f"Error accessing JPG files in Folder: {folder_path}: {e}")
+            return []
+
+    def build_jpg_mapping(self, jpg_files):
+        """
+        Builds a mapping from the last four digits to JPG filenames.
+        """
+        mapping = {}
+        for jpg in jpg_files:
+            last_four = self.extract_last_four_digits(jpg)
+            if last_four:
+                mapping[last_four] = jpg
+        return mapping
+
+    def extract_last_four_digits(self, filename):
+        """
+        Extracts the last four numerical digits from the filename before the extension.
+        """
+        base, _ = os.path.splitext(filename)
+        digits = ''.join(filter(str.isdigit, base))
+        if len(digits) < 4:
+            return None
+        return digits[-4:]
 
     def show_error(self, message):
         """
@@ -636,10 +800,25 @@ class QCFrame(tk.Frame):
         )
         back_button.pack(pady=10)
 
+        # Loading indicator
+        self.loading_frame = tk.Frame(self.scrollable_frame, bg='white')
+        self.loading_label = tk.Label(self.loading_frame, text="Loading TIF and JPG files...", font=("Merriweather", 14), bg='white')
+        self.loading_label.pack(pady=10)
+        self.progress_bar = ttk.Progressbar(self.loading_frame, mode='indeterminate')
+        self.progress_bar.pack(pady=10)
+        self.loading_frame.grid(row=0, column=0, columnspan=4, pady=20)
+
+        # Initialize queue and threading
+        self.queue = queue.Queue()
+        self.thread = None
+
         # Store the Box paths
         self.box_path_output = None
         self.box_path_raw = None
         self.box_name = None
+
+        # To keep references to PhotoImage objects to prevent garbage collection
+        self.photo_images = []
 
     def on_show(self, box_path_output, box_path_raw, box_name):
         """
@@ -649,68 +828,184 @@ class QCFrame(tk.Frame):
         self.box_path_raw = box_path_raw
         self.box_name = box_name
 
-        # Clear any existing widgets in the scrollable frame
+        # Clear any existing widgets in the scrollable frame except the loading frame
         for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
+            if widget != self.loading_frame:
+                widget.destroy()
 
-        # Header for the Box
-        box_header = tk.Label(self.scrollable_frame, text=f"Box: {self.box_name}", font=("Merriweather", 14, "bold"), bg='white')
-        box_header.grid(row=0, column=0, columnspan=5, pady=(10, 20))
+        # Show the loading indicator
+        self.loading_frame.grid(row=0, column=0, columnspan=4, pady=20)
+        self.progress_bar.start(10)  # Start the indeterminate progress bar
 
-        # Initialize row counter
-        row_counter = 1
+        # Start the worker thread to load TIF and JPG files
+        self.thread = threading.Thread(target=self.load_files, daemon=True)
+        self.thread.start()
 
-        # Iterate through each Folder within the Box
-        folders = self.get_folders(self.box_path_output)
-        if not folders:
-            tk.Label(self.scrollable_frame, text="No Folders found in this Box.", bg='white').grid(row=row_counter, column=0, pady=10)
+        # Start checking the queue
+        self.after(100, self.process_queue)
+
+    def load_files(self):
+        """
+        Worker thread function to load TIF and JPG file paths and enqueue them as pairs.
+        """
+        folders_output = self.get_folders(self.box_path_output)
+        if not folders_output:
+            self.queue.put(("error", f"No Folders found in Box: {self.box_name}"))
             return
 
-        for folder in folders:
-            folder_name = os.path.basename(os.path.normpath(folder))
-            tk.Label(self.scrollable_frame, text=f"Folder: {folder_name}", font=("Merriweather", 12, "bold"), bg='white').grid(row=row_counter, column=0, columnspan=4, pady=(10, 5), sticky='w')
-            row_counter += 1
-
-            # Get TIF files in the Folder
-            tif_files = self.get_tif_files(folder)
+        for folder_output in folders_output:
+            folder_name = os.path.basename(os.path.normpath(folder_output))
+            tif_files = self.get_tif_files(folder_output)
             if not tif_files:
-                tk.Label(self.scrollable_frame, text="No TIF files found in this Folder.", bg='white').grid(row=row_counter, column=0, columnspan=4, pady=5, sticky='w')
-                row_counter += 1
+                self.queue.put(("message", f"No TIF files found in Folder: {folder_name}"))
                 continue
 
-            # Display TIF files in a grid
-            col_counter = 0
+            # Build a mapping from last four digits to JPG files in the corresponding Raw Folder
+            folder_raw = os.path.join(self.box_path_raw, folder_name)
+            if not os.path.isdir(folder_raw):
+                self.queue.put(("error", f"Corresponding Raw Folder not found: {folder_raw}"))
+                continue
+
+            jpg_files = self.get_jpg_files(folder_raw)
+            jpg_mapping = self.build_jpg_mapping(jpg_files)
+
             for tif in tif_files:
-                tif_path = os.path.join(folder, tif)
-                try:
-                    img = Image.open(tif_path)
-                    img.thumbnail((150, 150))
-                    photo = ImageTk.PhotoImage(img)
-                except Exception as e:
-                    print(f"Error loading image {tif_path}: {e}")
-                    photo = None
+                tif_path = os.path.join(folder_output, tif)
+                last_four = self.extract_last_four_digits(tif)
+                if not last_four:
+                    self.queue.put(("message", f"Could not extract last four digits from TIF: {tif}"))
+                    self.queue.put(("pair", (tif_path, None)))
+                    continue
 
-                if photo:
-                    img_label = tk.Label(self.scrollable_frame, image=photo, bg='white')
-                    img_label.image = photo  # Keep a reference to prevent garbage collection
-                    img_label.grid(row=row_counter, column=col_counter, padx=10, pady=10)
-                    
-                    # Filename label
-                    filename_label = tk.Label(self.scrollable_frame, text=tif, bg='white')
-                    filename_label.grid(row=row_counter+1, column=col_counter, padx=10, pady=(0, 10))
-
+                corresponding_jpg = jpg_mapping.get(last_four, None)
+                if corresponding_jpg:
+                    jpg_path = os.path.join(folder_raw, corresponding_jpg)
                 else:
-                    error_label = tk.Label(self.scrollable_frame, text=f"Failed to load {tif}", bg='white', fg='red')
-                    error_label.grid(row=row_counter, column=col_counter, padx=10, pady=10)
+                    jpg_path = None
 
-                col_counter += 1
-                if col_counter >= 4:  # 4 images per row
-                    col_counter = 0
-                    row_counter += 2  # Move to next set of rows
+                self.queue.put(("pair", (tif_path, jpg_path)))
 
-            # If there are leftover images not filling the entire row
-            if col_counter != 0:
-                row_counter += 2
+        # Indicate that loading is complete
+        self.queue.put(("done", None))
+
+    def process_queue(self):
+        """
+        Processes items in the queue. Should be called periodically using `after`.
+        """
+        try:
+            while True:
+                item = self.queue.get_nowait()
+                if item[0] == "pair":
+                    tif_path, jpg_path = item[1]
+                    self.display_pair(tif_path, jpg_path)
+                elif item[0] == "message":
+                    message = item[1]
+                    self.display_message(message)
+                elif item[0] == "error":
+                    error_msg = item[1]
+                    self.display_error(error_msg)
+                elif item[0] == "done":
+                    self.loading_frame.grid_remove()
+                    self.progress_bar.stop()
+        except queue.Empty:
+            pass
+        finally:
+            if self.thread.is_alive() or not self.queue.empty():
+                self.after(100, self.process_queue)  # Continue checking the queue
+            else:
+                # Loading complete
+                self.loading_frame.grid_remove()
+                self.progress_bar.stop()
+
+    def display_pair(self, tif_path, jpg_path):
+        """
+        Displays a pair of TIF and corresponding JPG files side by side in the grid.
+        """
+        folder_name = os.path.basename(os.path.dirname(tif_path))
+        tif_name = os.path.basename(tif_path)
+        jpg_name = os.path.basename(jpg_path) if jpg_path else "No Corresponding JPG"
+
+        # If it's the first pair in a Folder, add a Folder label
+        if not hasattr(self, 'current_folder') or self.current_folder != folder_name:
+            self.current_folder = folder_name
+            folder_label = tk.Label(self.scrollable_frame, text=f"Folder: {folder_name}", font=("Merriweather", 12, "bold"), bg='white')
+            folder_label.grid(row=self.get_next_row(), column=0, columnspan=4, pady=(10, 5), sticky='w')
+
+        row = self.get_next_row()
+
+        # Load and create thumbnails for TIF
+        try:
+            img_tif = Image.open(tif_path)
+            img_tif.thumbnail((300, 300))
+            photo_tif = ImageTk.PhotoImage(img_tif)
+        except Exception as e:
+            print(f"Error loading image {tif_path}: {e}")
+            photo_tif = None
+
+        # Load and create thumbnails for JPG
+        if jpg_path and os.path.isfile(jpg_path):
+            try:
+                img_jpg = Image.open(jpg_path)
+                img_jpg.thumbnail((300, 300))
+                photo_jpg = ImageTk.PhotoImage(img_jpg)
+            except Exception as e:
+                print(f"Error loading image {jpg_path}: {e}")
+                photo_jpg = None
+        else:
+            photo_jpg = None
+
+        # Display TIF Image
+        if photo_tif:
+            tif_label = tk.Label(self.scrollable_frame, image=photo_tif, bg='white')
+            tif_label.grid(row=row, column=0, padx=10, pady=10)
+
+            # Filename label for TIF
+            tif_filename_label = tk.Label(self.scrollable_frame, text=tif_name, bg='white')
+            tif_filename_label.grid(row=row+1, column=0, padx=10, pady=(0, 10))
+        else:
+            tif_error_label = tk.Label(self.scrollable_frame, text=f"Failed to load {tif_name}", bg='white', fg='red')
+            tif_error_label.grid(row=row, column=0, padx=10, pady=10)
+
+        # Display JPG Image
+        if photo_jpg:
+            jpg_label = tk.Label(self.scrollable_frame, image=photo_jpg, bg='white')
+            jpg_label.grid(row=row, column=1, padx=10, pady=10)
+
+            # Filename label for JPG
+            jpg_filename_label = tk.Label(self.scrollable_frame, text=jpg_name, bg='white')
+            jpg_filename_label.grid(row=row+1, column=1, padx=10, pady=(0, 10))
+        else:
+            jpg_error_label = tk.Label(self.scrollable_frame, text="No Corresponding JPG", bg='white', fg='orange')
+            jpg_error_label.grid(row=row, column=1, padx=10, pady=10)
+
+        # Keep a reference to PhotoImage objects to prevent garbage collection
+        if photo_tif:
+            self.photo_images.append(photo_tif)
+        if photo_jpg:
+            self.photo_images.append(photo_jpg)
+
+    def display_message(self, message):
+        """
+        Displays informational messages in the scrollable frame.
+        """
+        row = self.get_next_row()
+        msg_label = tk.Label(self.scrollable_frame, text=message, bg='white', fg='blue')
+        msg_label.grid(row=row, column=0, columnspan=4, pady=5, sticky='w')
+
+    def display_error(self, error_msg):
+        """
+        Displays error messages in the scrollable frame.
+        """
+        row = self.get_next_row()
+        error_label = tk.Label(self.scrollable_frame, text=error_msg, bg='white', fg='red')
+        error_label.grid(row=row, column=0, columnspan=4, pady=5, sticky='w')
+
+    def get_next_row(self):
+        """
+        Determines the next available row in the grid.
+        """
+        current_rows = self.scrollable_frame.grid_size()[1]
+        return current_rows
 
     def get_folders(self, box_path_output):
         """
@@ -720,7 +1015,7 @@ class QCFrame(tk.Frame):
             return [os.path.join(box_path_output, d) for d in os.listdir(box_path_output)
                     if os.path.isdir(os.path.join(box_path_output, d))]
         except Exception as e:
-            messagebox.showerror("Error", f"Error accessing folders in Box: {box_path_output}: {e}")
+            self.show_error(f"Error accessing folders in Box: {box_path_output}: {e}")
             return []
 
     def get_tif_files(self, folder_path):
@@ -732,6 +1027,41 @@ class QCFrame(tk.Frame):
         except Exception as e:
             self.show_error(f"Error accessing TIF files in Folder: {folder_path}: {e}")
             return []
+
+    def get_jpg_files(self, folder_path):
+        """
+        Retrieves all JPG files within a Folder in Post Scan Raw.
+        """
+        try:
+            return [f for f in os.listdir(folder_path) if f.lower().endswith('.jpg')]
+        except Exception as e:
+            self.show_error(f"Error accessing JPG files in Folder: {folder_path}: {e}")
+            return []
+
+    def build_jpg_mapping(self, jpg_files):
+        """
+        Builds a mapping from the last four digits to JPG filenames.
+        """
+        mapping = {}
+        for jpg in jpg_files:
+            last_four = self.extract_last_four_digits(jpg)
+            if last_four:
+                # If multiple JPGs have the same last four digits, store them in a list
+                if last_four in mapping:
+                    mapping[last_four].append(jpg)
+                else:
+                    mapping[last_four] = [jpg]
+        return mapping
+
+    def extract_last_four_digits(self, filename):
+        """
+        Extracts the last four numerical digits from the filename before the extension.
+        """
+        base, _ = os.path.splitext(filename)
+        digits = ''.join(filter(str.isdigit, base))
+        if len(digits) < 4:
+            return None
+        return digits[-4:]
 
     def show_error(self, message):
         """
