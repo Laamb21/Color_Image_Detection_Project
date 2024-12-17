@@ -463,11 +463,8 @@ class QCFrame(tk.Frame):
         self.nav_canvas.pack(fill="x", padx=20, pady=(0, 10))
         self.nav_scrollbar.pack(fill="x", padx=20)
 
-        # Automatically resize the canvas scrollregion
-        self.navbar_frame.bind(
-            "<Configure>",
-            lambda e: self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox("all"))
-        )
+        # Bind mouse wheel events to the horizontal scrollbar
+        self.bind_mouse_wheel()
 
         # Canvas with scrollbar for file display
         canvas_frame = tk.Frame(self, bg='white')
@@ -494,6 +491,41 @@ class QCFrame(tk.Frame):
             command=lambda: controller.show_frame("treeview")
         )
         back_button.pack(pady=10)
+
+    def bind_mouse_wheel(self):
+        """
+        Binds mouse wheel events for the navigation canvas.
+        """
+        system = platform.system()
+
+        if system == 'Windows':
+            self.nav_canvas.bind_all("<MouseWheel>", self._on_mousewheel_windows)
+        elif system == 'Darwin':  # macOS
+            self.nav_canvas.bind_all("<MouseWheel>", self._on_mousewheel_mac)
+        else:  # Linux
+            self.nav_canvas.bind_all("<Button-4>", self._on_mousewheel_linux)
+            self.nav_canvas.bind_all("<Button-5>", self._on_mousewheel_linux)
+
+    def _on_mousewheel_windows(self, event):
+        """
+        Handles mouse wheel scrolling for Windows.
+        """
+        self.nav_canvas.xview_scroll(-1 * int(event.delta / 120), "units")
+
+    def _on_mousewheel_mac(self, event):
+        """
+        Handles mouse wheel scrolling for macOS.
+        """
+        self.nav_canvas.xview_scroll(-1 * int(event.delta), "units")
+
+    def _on_mousewheel_linux(self, event):
+        """
+        Handles mouse wheel scrolling for Linux.
+        """
+        if event.num == 4:
+            self.nav_canvas.xview_scroll(-1, "units")
+        elif event.num == 5:
+            self.nav_canvas.xview_scroll(1, "units")
 
     def on_show(self, box_path_output, box_path_raw, box_name):
         """
@@ -590,6 +622,7 @@ class QCFrame(tk.Frame):
     def display_message(self, message):
         msg_label = tk.Label(self.scrollable_frame, text=message, fg="red", bg="white", font=("Merriweather", 12))
         msg_label.pack(pady=10)
+
 
 
 
