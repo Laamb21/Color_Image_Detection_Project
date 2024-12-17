@@ -46,7 +46,7 @@ class App:
         header_frame.pack(fill="x")
 
         # Define logo path
-        logo_path = "C:/Users/liams/ArchScan_Capture_Project/color_image_detection/archSCAN_logo.png"
+        logo_path = "C:/Color_Image_Detection_Project/Color_Image_Detection_Project/test_folder/ls/archSCAN_logo.png"
 
         # Check if file for logo exists 
         if not os.path.isfile(logo_path):
