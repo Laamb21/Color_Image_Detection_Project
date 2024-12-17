@@ -452,11 +452,24 @@ class QCFrame(tk.Frame):
         header_label = tk.Label(self, text="Quality Control", font=("Merriweather", 16, "bold"), bg='white')
         header_label.pack(pady=10)
 
-        # Navigation Bar Frame
-        self.navbar_frame = tk.Frame(self, bg="#f0f0f0")
-        self.navbar_frame.pack(fill="x", padx=20, pady=(0, 10))
+        # Scrollable Navigation Bar
+        self.nav_canvas = tk.Canvas(self, height=50, bg="#f0f0f0", highlightthickness=0)
+        self.nav_scrollbar = ttk.Scrollbar(self, orient="horizontal", command=self.nav_canvas.xview)
+        self.navbar_frame = tk.Frame(self.nav_canvas, bg="#f0f0f0")
 
-        # Canvas with a scrollbar for the grid view
+        self.nav_canvas.create_window((0, 0), window=self.navbar_frame, anchor="nw")
+        self.nav_canvas.configure(xscrollcommand=self.nav_scrollbar.set)
+
+        self.nav_canvas.pack(fill="x", padx=20, pady=(0, 10))
+        self.nav_scrollbar.pack(fill="x", padx=20)
+
+        # Automatically resize the canvas scrollregion
+        self.navbar_frame.bind(
+            "<Configure>",
+            lambda e: self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox("all"))
+        )
+
+        # Canvas with scrollbar for file display
         canvas_frame = tk.Frame(self, bg='white')
         canvas_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
@@ -464,20 +477,13 @@ class QCFrame(tk.Frame):
         self.scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = tk.Frame(self.canvas, bg='white')
 
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(
-                scrollregion=self.canvas.bbox("all")
-            )
-        )
-
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
         self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
 
-        # Back button to return to TreeViewFrame
+        # Back button
         back_button = tk.Button(
             self,
             text="Back",
@@ -488,12 +494,6 @@ class QCFrame(tk.Frame):
             command=lambda: controller.show_frame("treeview")
         )
         back_button.pack(pady=10)
-
-        # Store the Box paths
-        self.box_path_output = None
-        self.box_path_raw = None
-        self.box_name = None
-        self.current_folder = None
 
     def on_show(self, box_path_output, box_path_raw, box_name):
         """
@@ -510,23 +510,22 @@ class QCFrame(tk.Frame):
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
-        # Get folders in the current box
+        # Get folders and add buttons to the navigation bar
         self.folders = self.get_folders(self.box_path_output)
 
-        # Add buttons to navigation bar for each folder
         for folder in self.folders:
             folder_name = os.path.basename(folder)
             btn = tk.Button(
-                self.navbar_frame, 
-                text=folder_name, 
-                bg="#4a90e3", 
-                fg="white", 
+                self.navbar_frame,
+                text=folder_name,
+                bg="#4a90e3",
+                fg="white",
                 font=("Merriweather", 10, "bold"),
                 command=lambda f=folder: self.display_folder_contents(f)
             )
             btn.pack(side="left", padx=5, pady=5)
 
-        # Load the contents of the first folder by default
+        # Show the first folder by default
         if self.folders:
             self.display_folder_contents(self.folders[0])
         else:
@@ -536,12 +535,11 @@ class QCFrame(tk.Frame):
         """
         Displays files (TIF and JPG) within the selected folder.
         """
-        # Clear existing grid view
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
         folder_name = os.path.basename(folder_path)
-        label = tk.Label(self.scrollable_frame, text=f"Contents of Folder: {folder_name}", 
+        label = tk.Label(self.scrollable_frame, text=f"Contents of Folder: {folder_name}",
                          font=("Merriweather", 12, "bold"), bg="white")
         label.pack(pady=10)
 
@@ -555,16 +553,13 @@ class QCFrame(tk.Frame):
             tif_path = os.path.join(folder_path, tif)
             last_four = self.extract_last_four_digits(tif)
             corresponding_jpgs = jpg_mapping.get(last_four, [])
-            
-            # Display TIF and its corresponding JPGs
+
             row_frame = tk.Frame(self.scrollable_frame, bg="white")
             row_frame.pack(pady=5)
 
-            # TIF Image
             tif_label = tk.Label(row_frame, text=f"TIF: {tif}", bg="white")
             tif_label.pack(side="left", padx=10)
 
-            # JPG Image(s)
             jpg_text = ", ".join(corresponding_jpgs) if corresponding_jpgs else "No Corresponding JPG"
             jpg_label = tk.Label(row_frame, text=f"JPG: {jpg_text}", bg="white", fg="blue")
             jpg_label.pack(side="left", padx=10)
@@ -595,6 +590,7 @@ class QCFrame(tk.Frame):
     def display_message(self, message):
         msg_label = tk.Label(self.scrollable_frame, text=message, fg="red", bg="white", font=("Merriweather", 12))
         msg_label.pack(pady=10)
+
 
 
 
