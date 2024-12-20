@@ -543,14 +543,65 @@ class QCFrame(tk.Frame):
         self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox("all"))
 
     def display_folder_contents(self, folder_path):
-        """Placeholder for displaying folder contents."""
-        print(f"Displaying contents of {folder_path}")
+        """
+        Displays files (TIF and JPG) within the selected folder.
+        """
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+
+        folder_name = os.path.basename(folder_path)
+        label = tk.Label(self.scrollable_frame, text=f"Contents of Folder: {folder_name}",
+                         font=("Merriweather", 12, "bold"), bg="white")
+        label.pack(pady=10)
+
+        tif_files = self.get_tif_files(folder_path)
+        jpg_folder = os.path.join(self.box_path_raw, folder_name, "JPG")
+        jpg_files = self.get_jpg_files(jpg_folder)
+
+        jpg_mapping = self.build_jpg_mapping(jpg_files)
+
+        for tif in tif_files:
+            tif_path = os.path.join(folder_path, tif)
+            last_four = self.extract_last_four_digits(tif)
+            corresponding_jpgs = jpg_mapping.get(last_four, [])
+
+            row_frame = tk.Frame(self.scrollable_frame, bg="white")
+            row_frame.pack(pady=5)
+
+            tif_label = tk.Label(row_frame, text=f"TIF: {tif}", bg="white")
+            tif_label.pack(side="left", padx=10)
+
+            jpg_text = ", ".join(corresponding_jpgs) if corresponding_jpgs else "No Corresponding JPG"
+            jpg_label = tk.Label(row_frame, text=f"JPG: {jpg_text}", bg="white", fg="blue")
+            jpg_label.pack(side="left", padx=10)
 
     def get_folders(self, path):
         """Retrieve subdirectories within a folder."""
         return [os.path.join(path, d) for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
 
+    def get_tif_files(self, path):
+        return [f for f in os.listdir(path) if f.lower().endswith(('.tif', '.tiff'))]
 
+    def get_jpg_files(self, path):
+        if not os.path.exists(path):
+            return []
+        return [f for f in os.listdir(path) if f.lower().endswith('.jpg')]
+
+    def build_jpg_mapping(self, jpg_files):
+        mapping = {}
+        for jpg in jpg_files:
+            last_four = self.extract_last_four_digits(jpg)
+            if last_four:
+                mapping.setdefault(last_four, []).append(jpg)
+        return mapping
+
+    def extract_last_four_digits(self, filename):
+        match = re.search(r'(\d{4})\D*$', filename)
+        return match.group(1) if match else None
+
+    def display_message(self, message):
+        msg_label = tk.Label(self.scrollable_frame, text=message, fg="red", bg="white", font=("Merriweather", 12))
+        msg_label.pack(pady=10)
 
 
 
