@@ -463,9 +463,6 @@ class QCFrame(tk.Frame):
         self.nav_canvas.pack(fill="x", padx=20, pady=(0, 10))
         self.nav_scrollbar.pack(fill="x", padx=20)
 
-        # Bind mouse wheel events for horizontal scrolling
-        self._bind_mouse_wheel()
-
         # Canvas for file display
         canvas_frame = tk.Frame(self, bg='white')
         canvas_frame.pack(fill='both', expand=True, padx=20, pady=10)
@@ -492,26 +489,7 @@ class QCFrame(tk.Frame):
         )
         back_button.pack(pady=10)
 
-    def _bind_mouse_wheel(self):
-        """Bind mouse wheel for horizontal scrolling."""
-        self.nav_canvas.bind("<Enter>", self._enable_mouse_wheel)
-        self.nav_canvas.bind("<Leave>", self._disable_mouse_wheel)
-
-    def _enable_mouse_wheel(self, event):
-        """Enable mouse wheel scrolling when hovering over the canvas."""
-        self.nav_canvas.bind_all("<MouseWheel>", self._on_mouse_wheel)
-
-    def _disable_mouse_wheel(self, event):
-        """Disable mouse wheel scrolling when leaving the canvas."""
-        self.nav_canvas.unbind_all("<MouseWheel>")
-
-    def _on_mouse_wheel(self, event):
-        """Scroll the canvas horizontally using the mouse wheel."""
-        delta = -1 * (event.delta // 120)  # Reverse direction for natural scrolling
-        self.nav_canvas.xview_scroll(delta, "units")
-
     def on_show(self, box_path_output, box_path_raw, box_name):
-        """Called when the frame is shown. Sets up the navigation bar."""
         self.box_path_output = box_path_output
         self.box_path_raw = box_path_raw
         self.box_name = box_name
@@ -543,65 +521,47 @@ class QCFrame(tk.Frame):
         self.nav_canvas.configure(scrollregion=self.nav_canvas.bbox("all"))
 
     def display_folder_contents(self, folder_path):
-        """
-        Displays files (TIF and JPG) within the selected folder.
-        """
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
-        folder_name = os.path.basename(folder_path)
-        label = tk.Label(self.scrollable_frame, text=f"Contents of Folder: {folder_name}",
-                         font=("Merriweather", 12, "bold"), bg="white")
-        label.pack(pady=10)
+        tif_files = self.get_image_files(folder_path, (".tif", ".tiff"))
+        jpg_folder = os.path.join(self.box_path_raw, os.path.basename(folder_path), "JPG")
+        jpg_files = self.get_image_files(jpg_folder, (".jpg",))
 
-        tif_files = self.get_tif_files(folder_path)
-        jpg_folder = os.path.join(self.box_path_raw, folder_name, "JPG")
-        jpg_files = self.get_jpg_files(jpg_folder)
-
-        jpg_mapping = self.build_jpg_mapping(jpg_files)
-
-        for tif in tif_files:
-            tif_path = os.path.join(folder_path, tif)
-            last_four = self.extract_last_four_digits(tif)
-            corresponding_jpgs = jpg_mapping.get(last_four, [])
-
+        for tif_file, jpg_file in zip(tif_files, jpg_files):
             row_frame = tk.Frame(self.scrollable_frame, bg="white")
-            row_frame.pack(pady=5)
+            row_frame.pack(pady=10)
 
-            tif_label = tk.Label(row_frame, text=f"TIF: {tif}", bg="white")
-            tif_label.pack(side="left", padx=10)
+            tif_image = self.load_image(os.path.join(folder_path, tif_file))
+            jpg_image = self.load_image(os.path.join(jpg_folder, jpg_file))
 
-            jpg_text = ", ".join(corresponding_jpgs) if corresponding_jpgs else "No Corresponding JPG"
-            jpg_label = tk.Label(row_frame, text=f"JPG: {jpg_text}", bg="white", fg="blue")
-            jpg_label.pack(side="left", padx=10)
+            if tif_image:
+                tif_label = tk.Label(row_frame, image=tif_image, bg="white")
+                tif_label.image = tif_image
+                tif_label.pack(side="left", padx=5)
+
+            if jpg_image:
+                jpg_label = tk.Label(row_frame, image=jpg_image, bg="white")
+                jpg_label.image = jpg_image
+                jpg_label.pack(side="left", padx=5)
 
     def get_folders(self, path):
-        """Retrieve subdirectories within a folder."""
         return [os.path.join(path, d) for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
 
-    def get_tif_files(self, path):
-        return [f for f in os.listdir(path) if f.lower().endswith(('.tif', '.tiff'))]
-
-    def get_jpg_files(self, path):
+    def get_image_files(self, path, extensions):
         if not os.path.exists(path):
             return []
-        return [f for f in os.listdir(path) if f.lower().endswith('.jpg')]
+        return [f for f in os.listdir(path) if f.lower().endswith(extensions)]
 
-    def build_jpg_mapping(self, jpg_files):
-        mapping = {}
-        for jpg in jpg_files:
-            last_four = self.extract_last_four_digits(jpg)
-            if last_four:
-                mapping.setdefault(last_four, []).append(jpg)
-        return mapping
+    def load_image(self, file_path):
+        try:
+            img = Image.open(file_path)
+            img = img.resize((200, 200), Image.Resampling.LANCZOS)
+            return ImageTk.PhotoImage(img)
+        except Exception as e:
+            print(f"Error loading image {file_path}: {e}")
+            return None
 
-    def extract_last_four_digits(self, filename):
-        match = re.search(r'(\d{4})\D*$', filename)
-        return match.group(1) if match else None
-
-    def display_message(self, message):
-        msg_label = tk.Label(self.scrollable_frame, text=message, fg="red", bg="white", font=("Merriweather", 12))
-        msg_label.pack(pady=10)
 
 
 
