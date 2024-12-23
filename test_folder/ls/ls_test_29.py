@@ -528,22 +528,29 @@ class QCFrame(tk.Frame):
         jpg_folder = os.path.join(self.box_path_raw, os.path.basename(folder_path), "JPG")
         jpg_files = self.get_image_files(jpg_folder, (".jpg",))
 
-        for tif_file, jpg_file in zip(tif_files, jpg_files):
-            row_frame = tk.Frame(self.scrollable_frame, bg="white")
-            row_frame.pack(pady=10)
+        row = 0
 
+        for tif_file, jpg_file in zip(tif_files, jpg_files):
+            # Load and display TIF image
             tif_image = self.load_image(os.path.join(folder_path, tif_file))
             jpg_image = self.load_image(os.path.join(jpg_folder, jpg_file))
 
-            if tif_image:
-                tif_label = tk.Label(row_frame, image=tif_image, bg="white")
-                tif_label.image = tif_image
-                tif_label.pack(side="left", padx=5)
+            if tif_image and jpg_image:
+                # Create a frame to center both images
+                image_frame = tk.Frame(self.scrollable_frame, bg="white")
+                image_frame.grid(row=row, column=0, pady=10)
 
-            if jpg_image:
-                jpg_label = tk.Label(row_frame, image=jpg_image, bg="white")
-                jpg_label.image = jpg_image
-                jpg_label.pack(side="left", padx=5)
+                # Place TIF image inside the frame
+                tif_label = tk.Label(image_frame, image=tif_image, bg="white")
+                tif_label.image = tif_image  # Keep a reference to prevent garbage collection
+                tif_label.pack(side="left", padx=10)
+
+                # Place JPG image inside the frame
+                jpg_label = tk.Label(image_frame, image=jpg_image, bg="white")
+                jpg_label.image = jpg_image  # Keep a reference to prevent garbage collection
+                jpg_label.pack(side="left", padx=10)
+
+        row += 1
 
     def get_folders(self, path):
         return [os.path.join(path, d) for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
